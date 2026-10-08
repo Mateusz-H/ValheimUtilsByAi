@@ -10,8 +10,6 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      VALHEIM_DIR: ${{ runner.temp }}/valheim
     steps:
       - uses: actions/checkout@v4
 
@@ -28,6 +26,8 @@ jobs:
 
       - name: Download Valheim dedicated server (game assemblies)
         run: |
+          VALHEIM_DIR="$RUNNER_TEMP/valheim"
+          echo "VALHEIM_DIR=$VALHEIM_DIR" >> "$GITHUB_ENV"
           sudo dpkg --add-architecture i386
           sudo apt-get update -qq
           sudo apt-get install -y -qq lib32gcc-s1
