@@ -105,6 +105,14 @@ have picked at least one.
 
 Side: Client. Other players and the server don't need the mod.
 
+### Auto repair at crafting stations (`[Crafting] AutoRepair`, default: on)
+
+Opening a crafting station (workbench, forge, black forge, ...) repairs every worn item it can repair, one per frame,
+so you no longer click the hammer button once per item. Which station repairs which item, the station level
+requirement and the crafting skill gain are vanilla.
+
+Side: Client. Other players and the server don't need the mod.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
