@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -24,11 +25,16 @@ internal static class AutoStorage
     private const string HammerToken = "$item_autostoragehammer";
     private const string ChestToken = "$piece_autostorage";
     private const float ChestMatchRadius = 0.5f;
+    private const int ChestWidth = 5;
+    private const int ChestHeight = 2;
+    // Chests built with 0.0.3 were 8x4; their saved items can sit outside the current grid.
+    private const int LegacyChestWidth = 8;
 
     private static readonly int LinkKey = "mh_AutoStorageLink".GetStableHashCode();
 
     private static ConfigEntry<bool> _enabled = null!;
     private static ConfigEntry<float> _maxLinkDistance = null!;
+    private static ConfigEntry<float> _collectRadius = null!;
 
     public static void Bind(ConfigFile config)
     {
@@ -47,6 +53,12 @@ internal static class AutoStorage
             "Maximum distance in meters between a piece and the AutoStorage chest it is linked to. " +
             "Pieces farther than roughly 64 m from any player are not simulated by the game, so a chest beyond " +
             "that distance from the piece may simply not be loaded.");
+        _collectRadius = config.Bind(
+            "Crafting",
+            "AutoStorageCollectRadius",
+            5f,
+            "Once a minute, products of a linked piece lying on the ground within this many meters of it (for " +
+            "example because the chest was full or open) are moved into its chest. 0 turns this off.");
 
         PrefabManager.OnVanillaPrefabsAvailable += RegisterPrefabs;
     }
@@ -64,14 +76,13 @@ internal static class AutoStorage
             CraftingStation = CraftingStations.Workbench,
         };
         chestConfig.AddRequirement("FineWood", 10, true);
-        chestConfig.AddRequirement("SurtlingCore", 2, true);
         chestConfig.AddRequirement("GreydwarfEye", 5, true);
-        chestConfig.AddRequirement("Bronze", 1, true);
+        chestConfig.AddRequirement("Bronze", 5, true);
         var chest = new CustomPiece(ChestPrefab, "piece_chest", chestConfig);
         var container = chest.PiecePrefab.GetComponent<Container>();
         container.m_name = ChestToken;
-        container.m_width = 8;
-        container.m_height = 4;
+        container.m_width = ChestWidth;
+        container.m_height = ChestHeight;
         PieceManager.Instance.AddPiece(chest);
 
         var hammerConfig = new ItemConfig
@@ -134,6 +145,39 @@ internal static class AutoStorage
     private static readonly Func<Container, bool> ContainerLoad =
         AccessTools.MethodDelegate<Func<Container, bool>>(AccessTools.Method(typeof(Container), "Load"));
 
+    private static readonly AccessTools.FieldRef<Inventory, int> InventoryWidth =
+        AccessTools.FieldRefAccess<Inventory, int>("m_width");
+    private static readonly Func<Inventory, bool, Vector2i> InventoryFindEmptySlot =
+        AccessTools.MethodDelegate<Func<Inventory, bool, Vector2i>>(AccessTools.Method(typeof(Inventory), "FindEmptySlot"));
+
+    // Vanilla Inventory.Load silently drops saved items whose column is outside the grid, so a 0.0.3 chest (8x4)
+    // would lose columns 5-7 now that the chest is 5x2. Load with the old width, then move every item outside the
+    // grid into a free slot. Items are only repositioned inside the same inventory, never added or removed; what
+    // does not fit stays saved outside the grid (still used by the automation) and moves in on a later load.
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.Load), typeof(ZPackage))]
+    private static class MigrateLegacyChest
+    {
+        private static void Prefix(Inventory __instance, out int __state)
+        {
+            __state = InventoryWidth(__instance);
+            if (__instance.GetName() == ChestToken && __state < LegacyChestWidth) InventoryWidth(__instance) = LegacyChestWidth;
+        }
+
+        private static void Postfix(Inventory __instance, int __state)
+        {
+            if (InventoryWidth(__instance) == __state) return;
+            InventoryWidth(__instance) = __state;
+            var height = __instance.GetHeight();
+            foreach (var item in __instance.GetAllItems())
+            {
+                if (item.m_gridPos.x < __state && item.m_gridPos.y < height) continue;
+                var slot = InventoryFindEmptySlot(__instance, false);
+                if (slot.x < 0) return;
+                item.m_gridPos = slot;
+            }
+        }
+    }
+
     // Inventory of the linked chest, ready to edit from this peer, or null when the chest is missing, too far,
     // open in someone's UI, or not loaded. Claiming ownership is what makes Container.Save persist our edits.
     private static Inventory? WritableInventory(ZNetView pieceView)
@@ -161,6 +205,63 @@ internal static class AutoStorage
     private static bool Store(Inventory inventory, GameObject prefab, int amount) =>
         amount > 0 && inventory.CanAddItem(prefab, amount) && inventory.AddItem(prefab, amount);
 
+    // ---------------------------------------------------------------- collecting stray products
+
+    private const float CollectInterval = 60f;
+
+    private static readonly Dictionary<ZNetView, float> NextCollect = new();
+    private static readonly Collider[] ItemHits = new Collider[128];
+    private static int _itemMask;
+
+    private static readonly AccessTools.FieldRef<ItemDrop, ZNetView> ItemView =
+        AccessTools.FieldRefAccess<ItemDrop, ZNetView>("m_nview");
+
+    // Once a minute per linked piece, move its products lying within the collect radius into the chest. Products
+    // end up on the ground whenever the chest was full, open or unloaded at the moment they came out.
+    //
+    // No duplication: a drop is only touched while this peer owns its ZDO. Ownership is handed over only by the
+    // current owner (ItemDrop.RPC_RequestOwn), so exactly one peer can take it, the same rule vanilla pickup relies
+    // on; otherwise we request ownership and retry on the next sweep. The chest count is measured before and after
+    // adding, and the drop loses exactly what went in: destroyed when the whole stack fit, shrunk when only part did.
+    // Cheap per-tick gate; the product list is only built by the caller when this says a sweep is due.
+    private static bool CollectDue(ZNetView pieceView)
+    {
+        if (_collectRadius.Value <= 0f) return false;
+        var now = Time.time;
+        if (NextCollect.TryGetValue(pieceView, out var next)) { if (now < next) return false; }
+        else foreach (var stale in NextCollect.Keys.Where(view => view == null).ToList()) NextCollect.Remove(stale);
+        NextCollect[pieceView] = now + CollectInterval;
+        return true;
+    }
+
+    private static void CollectStrays(ZNetView pieceView, Inventory inventory, IEnumerable<ItemDrop?> products)
+    {
+        var names = new HashSet<string>(products.Where(product => product != null).Select(product => product!.m_itemData.m_shared.m_name));
+        if (names.Count == 0) return;
+        if (_itemMask == 0) _itemMask = LayerMask.GetMask("item");
+        var hits = Physics.OverlapSphereNonAlloc(pieceView.transform.position, _collectRadius.Value, ItemHits, _itemMask);
+        for (var i = 0; i < hits; i++)
+        {
+            var body = ItemHits[i].attachedRigidbody;
+            var drop = body == null ? null : body.GetComponent<ItemDrop>();
+            if (drop == null || drop.IsPiece()) continue;
+            var view = ItemView(drop);
+            if (view == null || !view.IsValid()) continue;
+            var name = drop.m_itemData.m_shared.m_name;
+            if (!names.Contains(name)) continue;
+            if (!view.IsOwner()) { drop.RequestOwn(); continue; }
+            if (!drop.CanPickup()) continue;
+
+            drop.Load();
+            var stack = drop.m_itemData.m_stack;
+            var before = inventory.CountItems(name, matchWorldLevel: false);
+            inventory.AddItem(drop.m_itemData.Clone());
+            var added = inventory.CountItems(name, matchWorldLevel: false) - before;
+            if (added >= stack) ZNetScene.instance.Destroy(drop.gameObject);
+            else if (added > 0) drop.SetStack(stack - added);
+        }
+    }
+
     // ---------------------------------------------------------------- smelter family
 
     private static readonly AccessTools.FieldRef<Smelter, ZNetView> SmelterView =
@@ -182,6 +283,7 @@ internal static class AutoStorage
             var inventory = WritableInventory(nview);
             if (inventory == null) return;
             var zdo = nview.GetZDO();
+            if (CollectDue(nview)) CollectStrays(nview, inventory, __instance.m_conversion.Select(conversion => conversion.m_to));
 
             if (__instance.m_maxFuel > 0 && __instance.m_fuelItem != null)
             {
@@ -226,6 +328,7 @@ internal static class AutoStorage
         var inventory = WritableInventory(nview);
         if (inventory == null) return;
         var zdo = nview.GetZDO();
+        if (CollectDue(nview)) CollectStrays(nview, inventory, new[] { item });
         var level = zdo.GetInt(ZDOVars.s_level);
         if (level <= 0) return;
         var amount = level * Game.instance.ScaleDrops(item.m_itemData, 1);
@@ -280,6 +383,10 @@ internal static class AutoStorage
             var inventory = WritableInventory(nview);
             if (inventory == null) return;
             var zdo = nview.GetZDO();
+            if (CollectDue(nview))
+            {
+                CollectStrays(nview, inventory, __instance.m_conversion.Select(conversion => conversion.m_to).Concat(new[] { __instance.m_overCookedItem }));
+            }
 
             for (var slot = 0; slot < __instance.m_slots.Length; slot++)
             {
@@ -325,6 +432,7 @@ internal static class AutoStorage
             var inventory = WritableInventory(nview);
             if (inventory == null) return;
             var zdo = nview.GetZDO();
+            if (CollectDue(nview)) CollectStrays(nview, inventory, __instance.m_conversion.Select(conversion => conversion.m_to));
 
             var content = zdo.GetInt(ZDOVars.s_content);
             if (content == 0)
