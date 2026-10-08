@@ -21,13 +21,20 @@ for _ in $(seq 1 60); do
   sleep 2
   grep -q "Chainloader startup complete" "$log" 2>/dev/null && break
 done
+# With Jötunn present, custom prefabs register only once the world loads; wait for that so errors there are caught.
+if [ -f "$server/BepInEx/plugins/Jotunn.dll" ]; then
+  for _ in $(seq 1 90); do
+    sleep 2
+    grep -q "Registering .* custom RPCs" "$log" 2>/dev/null && break
+  done
+fi
 sleep 2
 taskkill //F //IM valheim_server.exe >/dev/null 2>&1 || true
 
 grep -q "Chainloader startup complete" "$log" || die "server never finished loading plugins, see $log"
 grep -q "Loading \[ValheimUtilsByAi" "$log" || die "plugin not loaded, see $log"
-if grep -iE "harmony|exception|\[Error  *:ValheimUtilsByAi\]" "$log" | grep -vi "AsyncResourceUpload"; then
+if grep -iE "harmony|exception|\[Error  *:(ValheimUtilsByAi|Jotunn)" "$log" | grep -vi "AsyncResourceUpload"; then
   die "errors in $log"
 fi
-grep -E "Loading \[ValheimUtilsByAi|Chainloader startup complete" "$log"
+grep -E "Loading \[ValheimUtilsByAi|Chainloader startup complete|Adding .* custom|Registering .* custom" "$log"
 echo "SMOKE TEST OK"

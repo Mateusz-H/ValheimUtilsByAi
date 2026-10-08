@@ -11,6 +11,8 @@ Features may be client-side, server-side or both; each one says which in `thunde
 ## Build and test
 
 - `dotnet build -c Release` compiles and produces the Thunderstore zip in `dist/`.
+  Target is `net462` because the Jötunn NuGet ships only a net462 lib; its build props are excluded
+  (`ExcludeAssets="build"`) since they expect a Steam install and publicized assemblies.
 - Game assemblies come from the free dedicated server, not Steam. Default path in the csproj is
   `C:/Users/mateu/valheim_server/valheim_server_Data/Managed`; override with `-p:ValheimManaged=...`.
   Refresh after a game patch: `steamcmd +force_install_dir <dir> +login anonymous +app_update 896660 +quit`.
@@ -29,6 +31,10 @@ Features may be client-side, server-side or both; each one says which in `thunde
    or check the config value on every call.
 4. Document the feature, its config key and its side (Client / Server / Both) in `thunderstore/README.md`,
    and add a bullet under `## Unreleased` in `thunderstore/CHANGELOG.md`.
+5. Jötunn (`JotunnLib` NuGet, Thunderstore dep `ValheimModding-Jotunn`) is allowed when it saves real work:
+   custom prefabs, items, pieces, recipes, localization, mod-side RPCs. Plain Harmony tweaks of vanilla
+   behaviour stay Jötunn-free. Clone vanilla prefabs in `PrefabManager.OnVanillaPrefabsAvailable`; never
+   touch `ObjectDB`/`ZNetScene` by hand. The smoke-test server needs `Jotunn.dll` in `BepInEx/plugins`.
 
 ## Releasing
 

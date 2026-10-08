@@ -12,6 +12,7 @@ containsNsfwContent = false
 
 [package.dependencies]
 denikson-BepInExPack_Valheim = "5.4.2351"
+ValheimModding-Jotunn = "2.30.2"
 
 [build]
 icon = "./thunderstore/icon.png"
@@ -27,4 +28,4 @@ repository = "https://thunderstore.io"
 communities = ["valheim"]
 
 [publish.categories]
-valheim = ["ai-generated", "mods", "crafting", "client-side"]
+valheim = ["ai-generated", "mods", "crafting", "client-side", "server-side"]
