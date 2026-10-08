@@ -94,12 +94,14 @@ happen. Turning the feature off keeps the trough craftable but animals stop usin
 
 ### Switch Forsaken power anywhere (`[Combat] ForsakenPowerAnywhere`, default: on)
 
-Press `[Combat] ForsakenPowerAnywhereKey` (default `H`) anywhere to switch to the next Forsaken power. The
-switch works like using a guardian stone: it only changes which power `F` will use. A power that is already
-running keeps going and the cooldown is not reset, so you can't use the hotkey to skip the cooldown.
+The Escape menu gets a button below Settings that shows the current power (e.g. **Forsaken power: Eikthyr**).
+Each click switches to the next Forsaken power, wherever you are. It works like using a guardian stone: it only
+changes which power `F` will use. A power that is already running keeps going and the cooldown is not reset, so
+switching can't skip the cooldown.
 
 You can only pick powers this character has already selected at a guardian stone at least once (the game
-remembers them). New powers still have to be unlocked at the stones as usual.
+remembers them). New powers still have to be unlocked at the stones as usual. The button is hidden until you
+have picked at least one.
 
 Side: Client. Other players and the server don't need the mod.
 

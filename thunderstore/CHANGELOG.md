@@ -1,8 +1,10 @@
 ## Unreleased
 
+- Switch Forsaken power anywhere: the button text is always in English, whatever the game language.
+
 ## 0.0.4
 
-- Switch Forsaken power anywhere: a hotkey (default `H`) cycles through the powers you already picked at a guardian stone, without touching the cooldown.
+- Switch Forsaken power anywhere: a button in the Escape menu cycles through the powers you already picked at a guardian stone, without touching the cooldown.
 
 - Auto storage: once a minute linked pieces collect their own products lying within 5 m into the chest (`AutoStorageCollectRadius`).
 - Auto storage: the chest has 10 slots instead of 32; items in existing chests are kept.

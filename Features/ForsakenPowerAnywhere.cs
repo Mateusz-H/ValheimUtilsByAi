@@ -15,6 +15,13 @@ internal static class ForsakenPowerAnywhere
     private static readonly string[] Powers =
         { "GP_Eikthyr", "GP_TheElder", "GP_Bonemass", "GP_Moder", "GP_Yagluth", "GP_Queen", "GP_Ashlands", "GP_DeepNorth" };
 
+    // The button is always English, whatever the game language.
+    private static readonly Dictionary<string, string> EnglishNames = new()
+    {
+        ["GP_Eikthyr"] = "Eikthyr", ["GP_TheElder"] = "The Elder", ["GP_Bonemass"] = "Bonemass", ["GP_Moder"] = "Moder",
+        ["GP_Yagluth"] = "Yagluth", ["GP_Queen"] = "The Queen", ["GP_Ashlands"] = "Fader", ["GP_DeepNorth"] = "Deep North",
+    };
+
     private static ConfigEntry<bool> _enabled = null!;
     private static Button? _button;
 
@@ -64,8 +71,7 @@ internal static class ForsakenPowerAnywhere
 
     private static void UpdateLabel(Player player)
     {
-        player.GetGuardianPowerHUD(out var se, out _);
-        _button!.GetComponentInChildren<TMP_Text>().text =
-            Localization.instance.Localize("$inventory_selectedgp: ") + (se ? Localization.instance.Localize(se.m_name) : "-");
+        EnglishNames.TryGetValue(player.GetGuardianPowerName(), out var name);
+        _button!.GetComponentInChildren<TMP_Text>().text = "Forsaken power: " + (name ?? "-");
     }
 }
