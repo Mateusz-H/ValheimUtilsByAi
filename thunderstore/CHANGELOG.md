@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.9
+
 - Craft and build from nearby containers: crafting, upgrading and building use materials from chests within 15 m (`CraftFromContainersRadius`), multiplayer safe.
 - Auto storage: AutoStorage Link now links to any chest you built. The custom AutoStorage chest is removed; **empty it before updating**, placed ones disappear with their contents.
 - Auto storage: a linked piece now asks the chest owner to hand the chest over instead of taking it, so two players never write to one chest at once.
