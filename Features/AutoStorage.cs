@@ -76,9 +76,8 @@ internal static class AutoStorage
             CraftingStation = CraftingStations.Workbench,
         };
         chestConfig.AddRequirement("FineWood", 10, true);
-        chestConfig.AddRequirement("SurtlingCore", 2, true);
         chestConfig.AddRequirement("GreydwarfEye", 5, true);
-        chestConfig.AddRequirement("Bronze", 1, true);
+        chestConfig.AddRequirement("Bronze", 5, true);
         var chest = new CustomPiece(ChestPrefab, "piece_chest", chestConfig);
         var container = chest.PiecePrefab.GetComponent<Container>();
         container.m_name = ChestToken;

@@ -30,7 +30,7 @@ Side: Client. Only players running the mod are restricted; a player without it c
 
 Adds two craftables:
 
-- **AutoStorage** chest (Hammer > Misc, workbench): 10 Fine Wood, 2 Surtling Cores, 5 Greydwarf Eyes, 1 Bronze. 10 slots.
+- **AutoStorage** chest (Hammer > Misc, workbench): 10 Fine Wood, 5 Greydwarf Eyes, 5 Bronze. 10 slots.
 - **AutoStorage Hammer** (workbench): 3 Wood, 1 Surtling Core.
 
 Hold the AutoStorage Hammer and left-click a processing piece, then left-click an AutoStorage chest to link them.
