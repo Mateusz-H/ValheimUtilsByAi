@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Faster loot from dead creatures: bodies vanish and drop loot after 1 second (configurable).
+- Faster loot from dead creatures: bodies vanish and drop loot after half a second (configurable).
 
 ## 0.0.7
 

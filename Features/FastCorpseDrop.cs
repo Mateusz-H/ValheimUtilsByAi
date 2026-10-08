@@ -23,7 +23,7 @@ internal static class FastCorpseDrop
         _seconds = config.Bind(
             "Combat",
             "FastCorpseDropSeconds",
-            1f,
+            0.5f,
             new ConfigDescription(
                 "Seconds a dead creature's body stays before it vanishes and drops loot. Never makes it slower than vanilla.",
                 new AcceptableValueRange<float>(0.1f, 10f)));

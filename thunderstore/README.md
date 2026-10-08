@@ -118,7 +118,7 @@ Side: Client. Other players and the server don't need the mod.
 
 ### Faster loot from dead creatures (`[Combat] FastCorpseDrop`, default: on)
 
-A killed creature's body vanishes in a puff and drops its loot after `[Combat] FastCorpseDropSeconds` (default 1 s,
+A killed creature's body vanishes in a puff and drops its loot after `[Combat] FastCorpseDropSeconds` (default 0.5 s,
 range 0.1-10) instead of lying there for several seconds. Bodies that vanish sooner in vanilla are left alone, and
 the loot itself, the death animation start and the puff effect stay vanilla.
 
