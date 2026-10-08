@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Auto storage: once a minute linked pieces collect their own products lying within 5 m into the chest (`AutoStorageCollectRadius`).
+- Auto storage: the chest has 10 slots instead of 32; items in existing chests are kept.
 - Auto map sync: all players share explored map and pins through the server, no cartography table needed (toggleable).
 
 ## 0.0.3

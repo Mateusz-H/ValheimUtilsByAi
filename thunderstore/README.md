@@ -30,7 +30,7 @@ Side: Client. Only players running the mod are restricted; a player without it c
 
 Adds two craftables:
 
-- **AutoStorage** chest (Hammer > Misc, workbench): 10 Fine Wood, 2 Surtling Cores, 5 Greydwarf Eyes, 1 Bronze. 32 slots.
+- **AutoStorage** chest (Hammer > Misc, workbench): 10 Fine Wood, 2 Surtling Cores, 5 Greydwarf Eyes, 1 Bronze. 10 slots.
 - **AutoStorage Hammer** (workbench): 3 Wood, 1 Surtling Core.
 
 Hold the AutoStorage Hammer and left-click a processing piece, then left-click an AutoStorage chest to link them.
@@ -52,6 +52,15 @@ Vanilla rules stay: fire, fuel, roof, cover and biome requirements are untouched
 the product drops on the ground as usual, and nothing moves while a player has the chest open.
 `[Crafting] AutoStorageMaxLinkDistance` (default 100 m) caps the link length. Pieces are only simulated near a
 player, so a chest more than roughly 64 m from its piece may not be loaded and the piece then idles.
+
+Products that still landed on the ground (chest full, open or not loaded at that moment) are picked up later: once a
+minute each linked piece moves its own products lying within `[Crafting] AutoStorageCollectRadius` (default 5 m,
+0 turns it off) into its chest. Only that piece's products are taken, never other items or food placed on tables.
+A drop is only taken by the game that owns it, exactly like a vanilla pickup, and leaves the ground only as far as
+it went into the chest, so nothing is duplicated or lost.
+
+Chests built with 0.0.3 had 32 slots. Their items are kept: everything is moved into the 10 visible slots, and
+anything beyond that stays stored in the chest, is still used by linked pieces, and shows up once slots free up.
 
 Side: Both. The mod (and Jötunn) must be installed on the server and on every client, otherwise the custom
 chest and hammer do not exist for them. Turning the feature off keeps both craftable but stops linking and
