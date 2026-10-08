@@ -77,6 +77,21 @@ table itself still works by hand.
 Side: Both. The server and every player who wants the shared map need the mod. The server keeps the map only in
 memory; after a restart it is rebuilt from the players' next uploads.
 
+### Feeding trough (`[World] FeedingTrough`, default: on)
+
+Adds the **Feeding Trough** (Hammer > Misc, workbench): 10 Wood, 2 Resin, a 10-slot chest. Put food in it and
+hungry tamed animals within `[World] FeedingTroughRange` (default 15 m) walk to it and eat one item at a time, just
+like food dropped on the ground. Each animal only takes what it eats in vanilla.
+
+Vanilla rules stay: animals only look for food when hungry, food lying on the ground nearby is still eaten first,
+and nothing is taken while a player has the trough open. Untamed animals ignore the trough, so it does not tame.
+The trough is only checked when the game's own food search runs (every 10 s per hungry tamed animal), without
+physics queries, so idle troughs and fed animals cost nothing.
+
+Side: Both. The mod (and Jötunn) must be installed on the server and on every client, otherwise the trough does
+not exist for them. Animals are simulated by a nearby player's game, so that player needs the mod for feeding to
+happen. Turning the feature off keeps the trough craftable but animals stop using it.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires

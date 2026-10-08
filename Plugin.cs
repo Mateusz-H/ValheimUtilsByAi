@@ -19,6 +19,7 @@ public sealed class Plugin : BaseUnityPlugin
         KilnWoodFilter.Bind(Config);
         AutoStorage.Bind(Config);
         AutoMapSync.Bind(Config);
+        FeedingTrough.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }
