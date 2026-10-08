@@ -27,9 +27,20 @@ grep -rn "<Method>(" obj/decompiled       # every caller
 
 Patch the single shared method all game paths go through, never each caller. Decide the side: Client (local player, UI, input), Server (ZDO owner, `ZNet.instance.IsServer()`, spawning), or Both.
 
+Small feature (one or two game types): read the decompile yourself. Anything bigger (several game types, custom
+prefabs, ZDO persistence, input handling) goes to a research subagent so the decompile dumps stay out of your
+context. Launch one `general-purpose` agent with `model: opus` and `effort: max`, read-only, with: the `obj/decompiled/` path, a one-paragraph
+description of the feature, and a numbered list of concrete questions per game type (fields, update loop and
+its owner check, ZDO keys, exact signatures and private/public, every caller of the spawn/output method, which
+Unity module DLL holds a needed type). Ask for quoted snippets and line references; forbid file edits. Write
+the patch only from that report, then run step 5. If the report leaves a signature uncertain, print that one
+type with `scripts/decompile.sh <GameType>` rather than guessing. Jötunn (CLAUDE.md feature rule 5) is a
+dependency decision, make it before the research so the questions match (prefab registration questions are
+moot with Jötunn).
+
 ## 4. Fill the TODOs
 
-- `Features/<PascalName>.cs`: the `[HarmonyPatch]` target and body. Read `_enabled.Value` on every call. If game state must change for the duration of a call, save it in `__state` and restore it in a postfix. No helpers, base classes or new dependencies.
+- `Features/<PascalName>.cs`: the `[HarmonyPatch]` target and body. Read `_enabled.Value` on every call. If game state must change for the duration of a call, save it in `__state` and restore it in a postfix. No helpers, base classes or new dependencies beyond what CLAUDE.md feature rule 5 allows.
 - Config description: one or two sentences a player understands.
 - `thunderstore/README.md` stub: what changes, what stays vanilla, Side, whether other players need the mod.
 - `thunderstore/CHANGELOG.md` bullet: one line.

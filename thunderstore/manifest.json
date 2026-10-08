@@ -4,6 +4,7 @@
   "website_url": "https://github.com/Mateusz-H/ValheimUtilsByAi",
   "description": "{DESCRIPTION}",
   "dependencies": [
-    "denikson-BepInExPack_Valheim-5.4.2351"
+    "denikson-BepInExPack_Valheim-5.4.2351",
+    "ValheimModding-Jotunn-2.30.2"
   ]
 }
