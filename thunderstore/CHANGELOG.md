@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Auto map sync: all players share explored map and pins through the server, no cartography table needed (toggleable).
+
 ## 0.0.3
 
 - Auto storage: craftable AutoStorage chest and AutoStorage Hammer; linked kilns, smelters, beehives, sap extractors, cooking stations and fermenters pull inputs from and push products into the chest (toggleable). Adds Jötunn as a dependency.

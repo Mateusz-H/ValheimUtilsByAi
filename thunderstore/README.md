@@ -57,6 +57,17 @@ Side: Both. The mod (and Jötunn) must be installed on the server and on every c
 chest and hammer do not exist for them. Turning the feature off keeps both craftable but stops linking and
 automation.
 
+### Auto map sync (`[World] AutoMapSync`, default: on)
+
+All players share one map without building a cartography table. Your explored areas and pins are sent to the
+server 30 seconds after you join and then every 5 minutes (only when something changed); the server passes them
+on to everyone else, and new players get the shared map when they join. Merging works exactly like reading a
+vanilla cartography table: shared areas show as "explored by others", death markers are not shared, and the
+table itself still works by hand.
+
+Side: Both. The server and every player who wants the shared map need the mod. The server keeps the map only in
+memory; after a restart it is rebuilt from the players' next uploads.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
