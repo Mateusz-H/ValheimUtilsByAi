@@ -59,15 +59,14 @@ automation.
 
 ### Auto map sync (`[World] AutoMapSync`, default: on)
 
-Build a cartography table at your base and everyone who comes near it shares one map. Within 30 m of a
-cartography table your explored map and pins are synced with it automatically: whenever someone else writes
-to the table you get their data within about 10 seconds, and your own map is written when you arrive and
-then every 5 minutes while you stay. No clicking "Read map" / "Record map" needed. The data is stored in
-the table exactly like vanilla, so manual reading and writing still work, warded tables still need access
-to write, and death markers are not shared.
+All players share one map without building a cartography table. Your explored areas and pins are sent to the
+server 30 seconds after you join and then every 5 minutes (only when something changed); the server passes them
+on to everyone else, and new players get the shared map when they join. Merging works exactly like reading a
+vanilla cartography table: shared areas show as "explored by others", death markers are not shared, and the
+table itself still works by hand.
 
-Side: Client. Each player who wants automatic syncing needs the mod; players without it can still use the
-table by hand.
+Side: Both. The server and every player who wants the shared map need the mod. The server keeps the map only in
+memory; after a restart it is rebuilt from the players' next uploads.
 
 ## Install
 

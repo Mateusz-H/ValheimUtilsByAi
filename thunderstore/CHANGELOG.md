@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Auto map sync: being within 30 m of a cartography table syncs your map and pins with it automatically (toggleable).
+- Auto map sync: all players share explored map and pins through the server, no cartography table needed (toggleable).
 
 ## 0.0.3
 

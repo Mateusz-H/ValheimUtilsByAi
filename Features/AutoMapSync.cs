@@ -1,22 +1,28 @@
-using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using BepInEx.Configuration;
 using HarmonyLib;
+using Jotunn.Entities;
+using Jotunn.Managers;
 using UnityEngine;
 
 namespace ValheimUtilsByAi.Features;
 
+// Shares the explored map and pins between all players without a cartography table. Each client uploads its map
+// (the vanilla cartography table format) every 5 minutes; the server keeps the latest upload in memory and relays it
+// to everyone else. Nothing is saved on the server: after a restart the first uploads rebuild it.
+// ponytail: last upload wins on the server, so two near-simultaneous uploads can hide a fresh pin from third players
+// until the next upload (max 5 min). Merge on the server if that ever matters.
 internal static class AutoMapSync
 {
-    private const float CheckInterval = 10f;
-    private const float WriteInterval = 300f;
-    private const float Range = 30f;
+    private const float FirstUploadDelay = 30f;
+    private const float UploadInterval = 300f;
 
     private static ConfigEntry<bool> _enabled = null!;
-    private static readonly List<MapTable> Tables = new();
-    private static float _nextCheck;
-    private static float _nextWrite;
-    private static byte[]? _lastRead;
+    private static CustomRPC _rpc = null!;
+    private static byte[]? _latest;         // server: last upload, compressed
+    private static byte[]? _lastUploaded;   // client: uncompressed data of the last upload
+    private static float _nextUpload = -1f; // client: -1 until the local player spawns
 
     public static void Bind(ConfigFile config)
     {
@@ -24,56 +30,75 @@ internal static class AutoMapSync
             "World",
             "AutoMapSync",
             true,
-            "While you are within 30 m of a cartography table, your map and pins are synced with it automatically: " +
-            "you read new data as soon as someone else writes it, and your own map is written when you arrive and every 5 minutes.");
+            "All players share one map: explored areas and pins are synced through the server automatically, " +
+            "no cartography table needed. Your map is sent 30 seconds after joining and then every 5 minutes.");
+        _rpc = NetworkManager.Instance.AddRPC("ValheimUtilsByAi.AutoMapSync", OnServerReceive, OnClientReceive);
     }
 
-    [HarmonyPatch(typeof(MapTable), "Start")]
-    private static class TrackTables
+    private static IEnumerator OnServerReceive(long sender, ZPackage package)
     {
-        private static void Postfix(MapTable __instance) => Tables.Add(__instance);
+        byte[] data = package.ReadByteArray();
+        if (!_enabled.Value) yield break;
+        if (data.Length == 0) // join request
+        {
+            if (_latest != null) _rpc.SendPackage(sender, Pack(_latest));
+            yield break;
+        }
+        _latest = data;
+        _rpc.SendPackage(ZNet.instance.GetPeers().Where(p => p.m_uid != sender).ToList(), Pack(data));
+        if (sender != ZNet.GetUID()) Merge(data); // a listen-server host plays too
     }
 
-    // Runs every frame, but only a float compare until the 10 s check. The heavy part (the explored array is
-    // ~4 MB uncompressed) only runs when the table's data changed or on arrival / every 5 minutes.
+    private static IEnumerator OnClientReceive(long sender, ZPackage package)
+    {
+        Merge(package.ReadByteArray());
+        yield break;
+    }
+
+    private static void Merge(byte[] compressed)
+    {
+        if (!_enabled.Value || Player.m_localPlayer == null || Minimap.instance == null) return;
+        Minimap.instance.AddSharedMapData(Utils.Decompress(compressed));
+    }
+
+    private static ZPackage Pack(byte[] data)
+    {
+        var package = new ZPackage();
+        package.Write(data);
+        return package;
+    }
+
+    // Runs every frame but is only a float compare between uploads. Building the map data walks the ~4 MB explored
+    // array, so that happens at most every 5 minutes and is only compressed and sent when something changed.
     [HarmonyPatch(typeof(Minimap), "Update")]
     private static class Tick
     {
         private static void Postfix()
         {
-            Player player = Player.m_localPlayer;
-            if (!_enabled.Value || player == null || Time.time < _nextCheck) return;
-            _nextCheck = Time.time + CheckInterval;
-
-            Tables.RemoveAll(t => t == null);
-            Vector3 pos = player.transform.position;
-            MapTable? table = Tables
-                .Where(t => Vector3.Distance(t.transform.position, pos) < Range)
-                .OrderBy(t => Vector3.Distance(t.transform.position, pos))
-                .FirstOrDefault();
-            ZNetView? nview = table != null ? table.GetComponent<ZNetView>() : null;
-            if (nview == null || !nview.IsValid())
+            if (Player.m_localPlayer == null)
             {
-                _nextWrite = 0f; // write on the next arrival
+                _nextUpload = -1f;
+                _lastUploaded = null;
                 return;
             }
+            if (!_enabled.Value || Time.time < _nextUpload) return;
 
-            byte[] stored = nview.GetZDO().GetByteArray(ZDOVars.s_data);
-            byte[]? data = null;
-            // The ZDO hands out the same array until someone writes, so a reference compare is enough.
-            if (stored != null && stored != _lastRead)
+            bool isServer = ZNet.instance.IsServer();
+            ZNetPeer? serverPeer = isServer ? null : ZNet.instance.GetServerPeer();
+            if (!isServer && serverPeer == null) return;
+            long server = isServer ? ZNet.GetUID() : serverPeer!.m_uid;
+
+            if (_nextUpload < 0f)
             {
-                data = Utils.Decompress(stored);
-                Minimap.instance.AddSharedMapData(data);
-                _lastRead = stored;
+                if (!isServer) _rpc.SendPackage(server, Pack(new byte[0]));
+                _nextUpload = Time.time + FirstUploadDelay;
+                return;
             }
-
-            if (Time.time < _nextWrite || !PrivateArea.CheckAccess(table!.transform.position, 0f, flash: false)) return;
-            _nextWrite = Time.time + WriteInterval;
-            if (data == null && stored != null) data = Utils.Decompress(stored);
-            byte[] merged = Minimap.instance.GetSharedMapData(data);
-            if (data != null && merged.SequenceEqual(data)) return;
-            nview.InvokeRPC("MapData", new ZPackage(Utils.Compress(merged)));
+            _nextUpload = Time.time + UploadInterval;
+            byte[] data = Minimap.instance.GetSharedMapData(null);
+            if (_lastUploaded != null && data.SequenceEqual(_lastUploaded)) return;
+            _lastUploaded = data;
+            _rpc.SendPackage(server, Pack(Utils.Compress(data)));
         }
     }
 }
