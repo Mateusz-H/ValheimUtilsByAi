@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Switch Forsaken power anywhere: a hotkey (default `H`) cycles through the powers you already picked at a guardian stone, without touching the cooldown.
+
 - Auto storage: once a minute linked pieces collect their own products lying within 5 m into the chest (`AutoStorageCollectRadius`).
 - Auto storage: the chest has 10 slots instead of 32; items in existing chests are kept.
 - Auto storage: chest recipe is now 10 Fine Wood, 5 Greydwarf Eyes, 5 Bronze (no Surtling Cores).
