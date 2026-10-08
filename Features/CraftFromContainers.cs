@@ -62,8 +62,8 @@ internal static class CraftFromContainers
             if (__instance.GetInventory() == null) return;
             var view = ContainerView(__instance);
             if (view == null || !view.IsValid()) return;
-            var piece = __instance.GetComponent<Piece>();
-            if (piece == null || !piece.IsPlacedByPlayer()) return;
+            // Who built it is checked on use: Piece.Awake may run after this, and a new chest gets its creator after Awake.
+            if (__instance.GetComponent<Piece>() == null) return;
             if (__instance.m_wagon != null || __instance.m_rootObjectOverride != null || __instance.m_autoDestroyEmpty) return;
             if (__instance.GetComponentInParent<Ship>() != null || __instance.GetComponentInParent<Incinerator>() != null) return;
 
@@ -131,7 +131,7 @@ internal static class CraftFromContainers
             if (chest == null) { Chests.RemoveAt(i); NextRequest.Remove(chest!); RequestDelay.Remove(chest!); continue; }
             var view = ContainerView(chest);
             if (!view.IsValid() || Vector3.Distance(chest.transform.position, position) > _radius.Value) continue;
-            if (!HasAccess(chest, playerID)) continue;
+            if (!chest.GetComponent<Piece>().IsPlacedByPlayer() || !HasAccess(chest, playerID)) continue;
             if (chest.m_checkGuardStone && !PrivateArea.CheckAccess(chest.transform.position, 0f, flash: false)) continue;
             if (!view.IsOwner()) { RequestOwnership(chest, view); continue; }
             NextRequest.Remove(chest);

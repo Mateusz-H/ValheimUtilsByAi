@@ -119,8 +119,8 @@ internal static class AutoStorage
             if (__instance.GetInventory() == null) return;
             var view = ContainerView(__instance);
             if (view == null || !view.IsValid()) return;
-            var piece = __instance.GetComponent<Piece>();
-            if (piece == null || !piece.IsPlacedByPlayer()) return;
+            // Who built it is checked on use: Piece.Awake may run after this, and a new chest gets its creator after Awake.
+            if (__instance.GetComponent<Piece>() == null) return;
             if (__instance.m_wagon != null || __instance.m_rootObjectOverride != null || __instance.m_autoDestroyEmpty) return;
             if (__instance.GetComponentInParent<Ship>() != null || __instance.GetComponentInParent<Incinerator>() != null) return;
 
@@ -480,7 +480,7 @@ internal static class AutoStorage
     private static Container? HoveredChest(GameObject hovered)
     {
         var container = hovered.GetComponentInParent<Container>();
-        return container != null && Chests.Contains(container) ? container : null;
+        return container != null && Chests.Contains(container) && container.GetComponent<Piece>().IsPlacedByPlayer() ? container : null;
     }
 
     private static void SetLink(ZNetView piece, Vector3 chestPosition)
