@@ -15,6 +15,7 @@ public sealed class Plugin : BaseUnityPlugin
     {
         Log = Logger;
         CraftWithoutRoof.Bind(Config);
+        KilnWoodFilter.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }
