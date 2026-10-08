@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.4
+
 - Switch Forsaken power anywhere: a hotkey (default `H`) cycles through the powers you already picked at a guardian stone, without touching the cooldown.
 
 - Auto storage: once a minute linked pieces collect their own products lying within 5 m into the chest (`AutoStorageCollectRadius`).
