@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>ValheimUtilsByAi</AssemblyName>
     <RootNamespace>ValheimUtilsByAi</RootNamespace>
-    <Version>0.0.9</Version>
+    <Version>0.0.10</Version>
     <BepInExPluginGuid>mh.ValheimUtilsByAi</BepInExPluginGuid>
     <BepInExPluginName>ValheimUtilsByAi</BepInExPluginName>
     <Description>AI-generated quality-of-life tweaks for Valheim. Every feature is toggleable in the BepInEx config.</Description>
