@@ -28,16 +28,19 @@ Side: Client. Only players running the mod are restricted; a player without it c
 
 ### Auto storage (`[Crafting] AutoStorage`, default: on)
 
-Adds two craftables:
+Adds two entries to the vanilla Hammer's Misc tab:
 
-- **AutoStorage** chest (Hammer > Misc, workbench): 10 Fine Wood, 5 Greydwarf Eyes, 5 Bronze. 10 slots.
-- **AutoStorage Hammer** (workbench): 3 Wood, 1 Surtling Core.
+- **AutoStorage** chest (workbench): 10 Fine Wood, 5 Greydwarf Eyes, 5 Bronze. 10 slots.
+- **AutoStorage Link**: a tool like the Hammer's Repair entry. Free, nothing is placed.
 
-Hold the AutoStorage Hammer and left-click a processing piece, then left-click an AutoStorage chest to link them.
-Linked pieces take their inputs from that chest and put their products into it, with no pickup radius or area:
-you choose every connection. Click the same piece and chest again to unlink; click a chest with nothing
-selected to unlink every piece connected to it. While the hammer is held, green lines show existing links and a
-yellow line follows the selected piece. The hammer never builds or repairs.
+Select AutoStorage Link in the Hammer menu and left-click a processing piece, then left-click an AutoStorage chest
+to link them. Linked pieces take their inputs from that chest and put their products into it, with no pickup
+radius or area: you choose every connection. Click the same piece and chest again to unlink; click a chest with
+nothing selected to unlink every piece connected to it. While AutoStorage Link is selected, green lines show
+existing links and a yellow line follows the selected piece. Pick any other Hammer entry to build again.
+
+The separate AutoStorage Hammer from earlier versions is gone: any copy in your inventory turns into its materials
+(3 Wood, 1 Surtling Core) when you log in or pick it up.
 
 | Piece | Takes from chest | Puts into chest |
 | --- | --- | --- |
