@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Feeding trough: craftable chest that hungry tamed animals nearby eat from (toggleable).
+
 - Auto map sync: all players share explored map and pins through the server, no cartography table needed (toggleable).
 
 ## 0.0.3
