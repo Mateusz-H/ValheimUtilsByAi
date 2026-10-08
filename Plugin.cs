@@ -21,6 +21,7 @@ public sealed class Plugin : BaseUnityPlugin
         AutoMapSync.Bind(Config);
         FeedingTrough.Bind(Config);
         ForsakenPowerAnywhere.Bind(Config);
+        AutoRepair.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }

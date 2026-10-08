@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Auto repair at crafting stations: opening a station repairs all items it can repair, no clicking.
+
 ## 0.0.5
 
 - Switch Forsaken power anywhere: the button text is always in English, whatever the game language.
