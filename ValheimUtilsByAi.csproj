@@ -33,6 +33,9 @@
     <Reference Include="UnityEngine.CoreModule" HintPath="$(ValheimManaged)/UnityEngine.CoreModule.dll" Private="false" />
     <Reference Include="UnityEngine.AssetBundleModule" HintPath="$(ValheimManaged)/UnityEngine.AssetBundleModule.dll" Private="false" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ValheimManaged)/UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UI" HintPath="$(ValheimManaged)/UnityEngine.UI.dll" Private="false" />
+    <Reference Include="Unity.TextMeshPro" HintPath="$(ValheimManaged)/Unity.TextMeshPro.dll" Private="false" />
+    <Reference Include="assembly_guiutils" HintPath="$(ValheimManaged)/assembly_guiutils.dll" Private="false" />
   </ItemGroup>
 
   <Target Name="FailIfGameAssembliesMissing" BeforeTargets="ResolveAssemblyReferences">

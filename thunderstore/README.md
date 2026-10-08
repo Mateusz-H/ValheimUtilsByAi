@@ -92,6 +92,17 @@ Side: Both. The mod (and Jötunn) must be installed on the server and on every c
 not exist for them. Animals are simulated by a nearby player's game, so that player needs the mod for feeding to
 happen. Turning the feature off keeps the trough craftable but animals stop using it.
 
+### Switch Forsaken power anywhere (`[Combat] ForsakenPowerAnywhere`, default: on)
+
+Press `[Combat] ForsakenPowerAnywhereKey` (default `H`) anywhere to switch to the next Forsaken power. The
+switch works like using a guardian stone: it only changes which power `F` will use. A power that is already
+running keeps going and the cooldown is not reset, so you can't use the hotkey to skip the cooldown.
+
+You can only pick powers this character has already selected at a guardian stone at least once (the game
+remembers them). New powers still have to be unlocked at the stones as usual.
+
+Side: Client. Other players and the server don't need the mod.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
