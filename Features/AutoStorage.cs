@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace ValheimUtilsByAi.Features;
 
-// Custom "AutoStorage" chest plus an "AutoStorageHammer" tool. The hammer links a processing piece (smelter
+// Custom "AutoStorage" chest plus an "AutoStorage Link" hammer tool. The tool links a processing piece (smelter
 // family, beehive, sap collector, cooking station, fermenter) to one AutoStorage chest. The piece's ZDO owner
 // then pulls inputs from that chest and pushes outputs into it on the piece's own vanilla update tick.
 //
@@ -23,6 +23,8 @@ internal static class AutoStorage
     private const string ChestPrefab = "AutoStorage";
     private const string HammerPrefab = "AutoStorageHammer";
     private const string HammerToken = "$item_autostoragehammer";
+    private const string LinkPrefab = "AutoStorageLink";
+    private const string LinkToken = "$piece_autostoragelink";
     private const string ChestToken = "$piece_autostorage";
     private const float ChestMatchRadius = 0.5f;
     private const int ChestWidth = 5;
@@ -42,10 +44,10 @@ internal static class AutoStorage
             "Crafting",
             "AutoStorage",
             true,
-            "Adds the AutoStorage chest and the AutoStorage Hammer. Pieces linked to a chest with the hammer " +
+            "Adds the AutoStorage chest and the AutoStorage Link hammer tool. Pieces linked to a chest with it " +
             "(kiln, smelter, blast furnace, spinning wheel, windmill, eitr refinery, beehive, sap collector, " +
             "cooking stations, fermenter) take their inputs from that chest and put their products into it. " +
-            "The chest and hammer stay craftable when this is off; only the automation and linking stop.");
+            "The chest stays buildable when this is off; only the automation and linking stop.");
         _maxLinkDistance = config.Bind(
             "Crafting",
             "AutoStorageMaxLinkDistance",
@@ -85,15 +87,31 @@ internal static class AutoStorage
         container.m_height = ChestHeight;
         PieceManager.Instance.AddPiece(chest);
 
-        var hammerConfig = new ItemConfig
+        // A normal Misc piece cloned from the Repair tool for its icon. Repair/remove flags would make the build
+        // menu treat it as a second special button; the ghost and the click are handled by the patches below.
+        var linkConfig = new PieceConfig
+        {
+            Name = LinkToken,
+            Description = "$piece_autostoragelink_description",
+            PieceTable = PieceTables.Hammer,
+            Category = PieceCategories.Misc,
+            Usage = new[] { PieceUsages.Misc },
+        };
+        var link = new CustomPiece(LinkPrefab, "piece_repair", linkConfig);
+        link.Piece.m_repairPiece = false;
+        link.Piece.m_removePiece = false;
+        link.Piece.m_canRotate = false;
+        link.Piece.m_resources = Array.Empty<Piece.Requirement>();
+        link.Piece.m_craftingStation = null;
+        PieceManager.Instance.AddPiece(link);
+        _linkPiece = link.Piece;
+
+        // Replaced by the Link piece: kept without a recipe so saved copies still load and get refunded.
+        var hammer = new CustomItem(HammerPrefab, "Hammer", new ItemConfig
         {
             Name = HammerToken,
             Description = "$item_autostoragehammer_description",
-            CraftingStation = CraftingStations.Workbench,
-        };
-        hammerConfig.AddRequirement("Wood", 3);
-        hammerConfig.AddRequirement("SurtlingCore", 1);
-        var hammer = new CustomItem(HammerPrefab, "Hammer", hammerConfig);
+        });
         var shared = hammer.ItemDrop.m_itemData.m_shared;
         shared.m_buildPieces = null;
         shared.m_useDurability = false;
@@ -102,11 +120,14 @@ internal static class AutoStorage
         var localization = LocalizationManager.Instance.GetLocalization();
         localization.AddTranslation(ChestToken.TrimStart('$'), "AutoStorage");
         localization.AddTranslation("piece_autostorage_description",
-            "Link kilns, smelters, beehives, cooking stations and fermenters to this chest with the AutoStorage Hammer.");
-        localization.AddTranslation(HammerToken.TrimStart('$'), "AutoStorage Hammer");
-        localization.AddTranslation("item_autostoragehammer_description",
+            "Link kilns, smelters, beehives, cooking stations and fermenters to this chest with AutoStorage Link (Hammer > Misc).");
+        localization.AddTranslation(LinkToken.TrimStart('$'), "AutoStorage Link");
+        localization.AddTranslation("piece_autostoragelink_description",
             "Click a processing piece, then an AutoStorage chest to link them. Click the pair again to unlink. " +
             "Click a chest with nothing selected to unlink everything from it.");
+        localization.AddTranslation(HammerToken.TrimStart('$'), "AutoStorage Hammer");
+        localization.AddTranslation("item_autostoragehammer_description",
+            "Replaced by AutoStorage Link in the Hammer's Misc tab. Refunded automatically.");
     }
 
     // ---------------------------------------------------------------- chest registry and link resolution
@@ -463,9 +484,10 @@ internal static class AutoStorage
     // ---------------------------------------------------------------- hammer: linking
 
     private static ZNetView? _selectedPiece;
-    private static bool _clickHeld;
+    private static Piece? _linkPiece;
 
-    private static bool HoldingHammer(Humanoid humanoid) => humanoid.RightItem?.m_shared.m_name == HammerToken;
+    private static bool LinkToolSelected(Player player) =>
+        _linkPiece != null && player.InPlaceMode() && player.GetSelectedPiece() == _linkPiece;
 
     private static ZNetView? LinkablePiece(GameObject hovered)
     {
@@ -492,8 +514,10 @@ internal static class AutoStorage
 
     private static void HandleHammerClick(Player player)
     {
-        var hovered = player.GetHoverObject();
-        if (hovered == null) return;
+        // In build mode the player has no hover object; the hammer's hovered piece is the one it highlights.
+        var hoveredPiece = player.GetHoveringPiece();
+        if (hoveredPiece == null) return;
+        var hovered = hoveredPiece.gameObject;
 
         var chest = HoveredChest(hovered);
         if (chest != null)
@@ -545,23 +569,104 @@ internal static class AutoStorage
         player.Message(MessageHud.MessageType.Center, "Selected, now click an AutoStorage chest");
     }
 
-    // The tool is not a weapon, so vanilla would punch. Consuming the attack (result true) clears the queued
-    // attack timer; while the button is held vanilla keeps calling this, hence the own edge detection.
-    [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.StartAttack))]
-    private static class HammerClick
+    private static readonly AccessTools.FieldRef<Player, GameObject?> PlacementGhost =
+        AccessTools.FieldRefAccess<Player, GameObject?>("m_placementGhost");
+
+    // Without a ghost vanilla's place branch does nothing: no cost, stamina, durability or effects. Not gated on
+    // the config: the Link piece must never be placeable.
+    [HarmonyPatch(typeof(Player), "SetupPlacementGhost")]
+    private static class NoLinkGhost
     {
-        private static bool Prefix(Humanoid __instance, bool secondaryAttack, ref bool __result)
+        private static bool Prefix(Player __instance)
         {
-            if (!_enabled.Value || __instance != Player.m_localPlayer || !HoldingHammer(__instance)) return true;
-            __result = true;
-            if (secondaryAttack || _clickHeld) return false;
-            _clickHeld = true;
-            HandleHammerClick((Player)__instance);
+            if (_linkPiece == null || __instance.GetSelectedPiece() != _linkPiece) return true;
+            ref var ghost = ref PlacementGhost(__instance);
+            if (ghost != null) UnityEngine.Object.Destroy(ghost);
+            ghost = null;
             return false;
         }
     }
 
-    // ---------------------------------------------------------------- hammer: link lines
+    // Same input gates as vanilla's place click.
+    [HarmonyPatch(typeof(Player), "UpdatePlacement")]
+    private static class LinkClick
+    {
+        private static void Postfix(Player __instance, bool takeInput)
+        {
+            if (__instance != Player.m_localPlayer || !takeInput || __instance.IsDead() || !LinkToolSelected(__instance)) return;
+            if (Hud.IsPieceSelectionVisible() || Hud.InRadial() || ZInput.GetButton("JoyAltKeys")) return;
+            if (!ZInput.GetButtonDown("Attack") && !ZInput.GetButtonDown("JoyPlace")) return;
+            if (!_enabled.Value)
+            {
+                __instance.Message(MessageHud.MessageType.Center, "AutoStorage is disabled in the config");
+                return;
+            }
+            HandleHammerClick(__instance);
+        }
+    }
+
+    // The Link piece can't be built, so it must not count towards the "build every piece" achievement.
+    [HarmonyPatch(typeof(ObjectDB), nameof(ObjectDB.GetAllBuildPieces))]
+    private static class HideLinkFromAchievement
+    {
+        private static void Postfix(List<Piece> __result)
+        {
+            if (_linkPiece != null) __result.Remove(_linkPiece);
+        }
+    }
+
+    // ---------------------------------------------------------------- old AutoStorage Hammer refund
+
+    private static bool _checkOldHammers;
+
+    [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
+    private static class OldHammerOnSpawn
+    {
+        private static void Postfix(Player __instance) => _checkOldHammers |= __instance == Player.m_localPlayer;
+    }
+
+    // Also catches hammers taken from chests, the ground or a tombstone. Only flags: changing the inventory
+    // inside its own change callback is unsafe, so the swap happens on the next Player.Update.
+    [HarmonyPatch(typeof(Player), "OnInventoryChanged")]
+    private static class OldHammerOnChange
+    {
+        private static void Postfix(Player __instance) => _checkOldHammers |= __instance == Player.m_localPlayer;
+    }
+
+    private static void RefundOldHammers(Player player)
+    {
+        var inventory = player.GetInventory();
+        var old = inventory.GetAllItems().Where(i => i.m_shared.m_name == HammerToken).ToList();
+        foreach (var item in old)
+        {
+            player.RemoveEquipAction(item);
+            player.UnequipItem(item, triggerEquipEffects: false);
+            if (!inventory.RemoveItem(item)) continue;
+            Refund(player, inventory, "Wood", 3 * item.m_stack);
+            Refund(player, inventory, "SurtlingCore", item.m_stack);
+        }
+        if (old.Count > 0)
+        {
+            player.Message(MessageHud.MessageType.Center, "AutoStorage Hammer refunded, use AutoStorage Link (Hammer > Misc)");
+        }
+    }
+
+    private static void Refund(Player player, Inventory inventory, string prefabName, int amount)
+    {
+        var prefab = ObjectDB.instance.GetItemPrefab(prefabName);
+        if (prefab == null || amount <= 0) return;
+        var data = prefab.GetComponent<ItemDrop>().m_itemData.Clone();
+        data.m_dropPrefab = prefab;
+        data.m_stack = amount;
+        data.m_worldLevel = (byte)Game.m_worldLevel;
+        data.m_pickedUp = true;
+        if (inventory.AddItem(data)) return;
+        // AddItem leaves the part that did not fit in m_stack.
+        var t = player.transform;
+        ItemDrop.DropItem(data, data.m_stack, t.position + t.forward + t.up, t.rotation);
+    }
+
+    // ---------------------------------------------------------------- link tool: lines
 
     private static readonly List<LineRenderer> Lines = new();
     private static readonly List<Piece> NearbyPieces = new();
@@ -575,9 +680,13 @@ internal static class AutoStorage
         private static void Postfix(Player __instance)
         {
             if (__instance != Player.m_localPlayer) return;
-            if (!ZInput.GetButton("Attack") && !ZInput.GetButton("JoyAttack")) _clickHeld = false;
+            if (_checkOldHammers)
+            {
+                _checkOldHammers = false;
+                RefundOldHammers(__instance);
+            }
 
-            var show = _enabled.Value && HoldingHammer(__instance);
+            var show = _enabled.Value && LinkToolSelected(__instance);
             if (!show)
             {
                 _selectedPiece = null;

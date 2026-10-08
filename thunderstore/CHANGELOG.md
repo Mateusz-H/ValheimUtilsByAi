@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Auto storage: linking moved into the vanilla Hammer as AutoStorage Link (Misc tab); the AutoStorage Hammer item is removed and refunded as 3 Wood and 1 Surtling Core.
+
 ## 0.0.6
 
 - Auto repair at crafting stations: opening a station repairs all items it can repair, no clicking.
