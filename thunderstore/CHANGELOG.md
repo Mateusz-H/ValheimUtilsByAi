@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.2
+
 - Kiln wood filter: the charcoal kiln only accepts configured wood types, default plain wood only (toggleable).
 
 ## 0.0.1
