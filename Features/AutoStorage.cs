@@ -119,7 +119,8 @@ internal static class AutoStorage
             if (__instance.GetInventory() == null) return;
             var view = ContainerView(__instance);
             if (view == null || !view.IsValid()) return;
-            // Who built it is checked on use: Piece.Awake may run after this, and a new chest gets its creator after Awake.
+            // "Built by any player" (not world-generated) is checked on use: the creator is read in Piece.Awake, which
+            // may run after this, and a newly built chest only gets its creator after Awake.
             if (__instance.GetComponent<Piece>() == null) return;
             if (__instance.m_wagon != null || __instance.m_rootObjectOverride != null || __instance.m_autoDestroyEmpty) return;
             if (__instance.GetComponentInParent<Ship>() != null || __instance.GetComponentInParent<Incinerator>() != null) return;

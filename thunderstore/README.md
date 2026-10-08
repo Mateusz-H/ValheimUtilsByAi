@@ -31,7 +31,7 @@ Side: Client. Only players running the mod are restricted; a player without it c
 Adds **AutoStorage Link** to the vanilla Hammer's Misc tab: a tool like the Hammer's Repair entry. Free, nothing
 is placed.
 
-Select AutoStorage Link in the Hammer menu and left-click a processing piece, then left-click any chest you built
+Select AutoStorage Link in the Hammer menu and left-click a processing piece, then left-click any chest built by a player
 (wood chest, reinforced chest, black metal chest, ...; not carts, ships or tombstones) to link them. Linked pieces take their inputs from that chest and put their products into it, with no pickup
 radius or area: you choose every connection. Click the same piece and chest again to unlink; click a chest with
 nothing selected to unlink every piece connected to it. While AutoStorage Link is selected, green lines show
@@ -139,7 +139,7 @@ it keeps the vanilla delay.
 
 ### Craft and build from nearby containers (`[Crafting] CraftFromContainers`, default: on)
 
-Crafting, upgrading and building count materials in chests you built within `[Crafting] CraftFromContainersRadius`
+Crafting, upgrading and building count materials in chests built by any player within `[Crafting] CraftFromContainersRadius`
 (default 15 m) of you. Your own inventory is used first, then the chests. The requirement numbers in the crafting
 panel and build menu show what you have (inventory plus chests) and what is needed, for example `25/10`, and stop
 flashing red when the chests have enough.
