@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AssemblyName>ValheimUtilsByAi</AssemblyName>
+    <RootNamespace>ValheimUtilsByAi</RootNamespace>
+    <Version>0.0.1</Version>
+    <BepInExPluginGuid>mh.ValheimUtilsByAi</BepInExPluginGuid>
+    <BepInExPluginName>ValheimUtilsByAi</BepInExPluginName>
+    <Description>AI-generated quality-of-life tweaks for Valheim. Every feature is toggleable in the BepInEx config.</Description>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <!-- Game assemblies: Steam client install or the free dedicated server (SteamCMD app 896660). Override: -p:ValheimManaged=... -->
+    <ValheimManaged Condition="'$(ValheimManaged)' == ''">C:\Users\mateu\valheim_server\valheim_server_Data\Managed</ValheimManaged>
+    <ThunderstoreDir>$(MSBuildProjectDirectory)\thunderstore</ThunderstoreDir>
+    <PackageStageDir>$(BaseIntermediateOutputPath)thunderstore-stage\</PackageStageDir>
+    <PackageZip>$(MSBuildProjectDirectory)\dist\$(AssemblyName)-$(Version).zip</PackageZip>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Core" Version="5.4.21" />
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="assembly_valheim" HintPath="$(ValheimManaged)\assembly_valheim.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(ValheimManaged)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(ValheimManaged)\UnityEngine.CoreModule.dll" Private="false" />
+  </ItemGroup>
+
+  <Target Name="FailIfGameAssembliesMissing" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(ValheimManaged)\assembly_valheim.dll')"
+           Text="assembly_valheim.dll not found in '$(ValheimManaged)'. Pass -p:ValheimManaged=&lt;path to Valheim_Data\Managed&gt;." />
+  </Target>
+
+  <Target Name="PackThunderstore" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <RemoveDir Directories="$(PackageStageDir)" />
+    <Copy SourceFiles="$(TargetPath);$(ThunderstoreDir)\README.md;$(ThunderstoreDir)\CHANGELOG.md;$(ThunderstoreDir)\icon.png" DestinationFolder="$(PackageStageDir)" />
+    <WriteLinesToFile File="$(PackageStageDir)manifest.json" Overwrite="true" Lines="$([System.IO.File]::ReadAllText('$(ThunderstoreDir)\manifest.json').Replace('{VERSION}', '$(Version)').Replace('{DESCRIPTION}', '$(Description)'))" />
+    <MakeDir Directories="$(MSBuildProjectDirectory)\dist" />
+    <Delete Files="$(PackageZip)" />
+    <ZipDirectory SourceDirectory="$(PackageStageDir)" DestinationFile="$(PackageZip)" />
+    <Message Importance="high" Text="Thunderstore package: $(PackageZip)" />
+  </Target>
+
+</Project>

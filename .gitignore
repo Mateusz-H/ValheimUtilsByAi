@@ -1,0 +1,4 @@
+bin/
+obj/
+dist/
+.claude/settings.local.json
