@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.3
+
 - Auto storage: craftable AutoStorage chest and AutoStorage Hammer; linked kilns, smelters, beehives, sap extractors, cooking stations and fermenters pull inputs from and push products into the chest (toggleable). Adds Jötunn as a dependency.
 
 ## 0.0.2
