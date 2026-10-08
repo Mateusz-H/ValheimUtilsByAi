@@ -125,6 +125,16 @@ two seconds. The station's own area effect, crafting distance and upgrade rules 
 
 Side: Client. Only the player who builds needs the mod; other players and the server don't.
 
+### Faster loot from dead creatures (`[Combat] FastCorpseDrop`, default: on)
+
+A killed creature's body vanishes in a puff and drops its loot after `[Combat] FastCorpseDropSeconds` (default 0.5 s,
+range 0.1-10) instead of lying there for several seconds. Bodies that vanish sooner in vanilla are left alone, and
+the loot itself, the death animation start and the puff effect stay vanilla.
+
+Side: Client. It applies to creatures your game controls when they die: always in single player; in multiplayer
+usually the ones near you. Other players and the server don't need the mod; a body controlled by a player without
+it keeps the vanilla delay.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires

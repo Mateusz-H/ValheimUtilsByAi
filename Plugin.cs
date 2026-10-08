@@ -23,6 +23,7 @@ public sealed class Plugin : BaseUnityPlugin
         ForsakenPowerAnywhere.Bind(Config);
         AutoRepair.Bind(Config);
         StationBuildRange.Bind(Config);
+        FastCorpseDrop.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }

@@ -1,6 +1,7 @@
 ## Unreleased
 
 - Larger crafting station build range: build up to 2x farther from workbenches and other stations (configurable).
+- Faster loot from dead creatures: bodies vanish and drop loot after half a second (configurable).
 
 ## 0.0.7
 
