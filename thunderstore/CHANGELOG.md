@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.5
+
 - Switch Forsaken power anywhere: the button text is always in English, whatever the game language.
 
 ## 0.0.4
