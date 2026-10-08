@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Larger crafting station build range: build up to 2x farther from workbenches and other stations (configurable).
+
 ## 0.0.7
 
 - Auto storage: linking moved into the vanilla Hammer as AutoStorage Link (Misc tab); the AutoStorage Hammer item is removed and refunded as 3 Wood and 1 Surtling Core.

@@ -116,6 +116,15 @@ requirement and the crafting skill gain are vanilla.
 
 Side: Client. Other players and the server don't need the mod.
 
+### Larger crafting station build range (`[Building] StationBuildRange`, default: on)
+
+You can build farther from a workbench, forge or any other crafting station: its build range, including the bonus
+from station upgrades, is multiplied by `[Building] StationBuildRangeMultiplier` (default 2, so a workbench reaches
+40 m instead of 20 m; 1 is vanilla, max 10). The circle shown around the station grows with it. Changes apply within
+two seconds. The station's own area effect, crafting distance and upgrade rules stay vanilla.
+
+Side: Client. Only the player who builds needs the mod; other players and the server don't.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
