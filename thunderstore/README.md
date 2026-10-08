@@ -28,13 +28,11 @@ Side: Client. Only players running the mod are restricted; a player without it c
 
 ### Auto storage (`[Crafting] AutoStorage`, default: on)
 
-Adds two entries to the vanilla Hammer's Misc tab:
+Adds **AutoStorage Link** to the vanilla Hammer's Misc tab: a tool like the Hammer's Repair entry. Free, nothing
+is placed.
 
-- **AutoStorage** chest (workbench): 10 Fine Wood, 5 Greydwarf Eyes, 5 Bronze. 10 slots.
-- **AutoStorage Link**: a tool like the Hammer's Repair entry. Free, nothing is placed.
-
-Select AutoStorage Link in the Hammer menu and left-click a processing piece, then left-click an AutoStorage chest
-to link them. Linked pieces take their inputs from that chest and put their products into it, with no pickup
+Select AutoStorage Link in the Hammer menu and left-click a processing piece, then left-click any chest you built
+(wood chest, reinforced chest, black metal chest, ...; not carts, ships or tombstones) to link them. Linked pieces take their inputs from that chest and put their products into it, with no pickup
 radius or area: you choose every connection. Click the same piece and chest again to unlink; click a chest with
 nothing selected to unlink every piece connected to it. While AutoStorage Link is selected, green lines show
 existing links and a yellow line follows the selected piece. Pick any other Hammer entry to build again.
@@ -62,12 +60,16 @@ minute each linked piece moves its own products lying within `[Crafting] AutoSto
 A drop is only taken by the game that owns it, exactly like a vanilla pickup, and leaves the ground only as far as
 it went into the chest, so nothing is duplicated or lost.
 
-Chests built with 0.0.3 had 32 slots. Their items are kept: everything is moved into the 10 visible slots, and
-anything beyond that stays stored in the chest, is still used by linked pieces, and shows up once slots free up.
+In multiplayer only the game that owns a chest edits it. A linked piece asks the chest's owner to hand it over and
+waits until it does; the owner hands it over only while nobody has the chest open, so two players never write to
+the same chest at once.
 
-Side: Both. The mod (and Jötunn) must be installed on the server and on every client, otherwise the custom
-chest and hammer do not exist for them. Turning the feature off keeps both craftable but stops linking and
-automation.
+The custom AutoStorage chest from earlier versions is removed. **Empty your AutoStorage chests before updating:**
+placed ones disappear from the world, along with their contents.
+
+Side: Both. The mod (and Jötunn) must be installed on the server and on every client, otherwise the Link tool does
+not exist for them and their chests are never handed over. Turning the feature off stops linking and automation;
+links are kept.
 
 ### Auto map sync (`[World] AutoMapSync`, default: on)
 
@@ -134,6 +136,24 @@ the loot itself, the death animation start and the puff effect stay vanilla.
 Side: Client. It applies to creatures your game controls when they die: always in single player; in multiplayer
 usually the ones near you. Other players and the server don't need the mod; a body controlled by a player without
 it keeps the vanilla delay.
+
+### Craft and build from nearby containers (`[Crafting] CraftFromContainers`, default: on)
+
+Crafting, upgrading and building count materials in chests you built within `[Crafting] CraftFromContainersRadius`
+(default 15 m) of you. Your own inventory is used first, then the chests. The requirement numbers in the crafting
+panel and build menu stop flashing red when the chests have enough.
+
+What stays vanilla: carts, ships, tombstones, other players' private chests and chests behind a ward you can't use
+are ignored. The item you upgrade must still be in your inventory. Recipes that take only one of several
+ingredients still use your inventory only. Recipe discovery still comes only from what you carry, and no-cost mode
+never touches chests.
+
+Multiplayer: a chest is used only while your game owns it, so nothing is duplicated or lost. If another player's game
+owns it, yours asks for it, and their game hands it over only while nobody has it open. A chest someone is looking
+into is skipped until they close it. If two players craft from the same chest at the same time, it can take a
+second or two before the chest counts for you.
+
+Side: Both. Chests owned by a player without the mod are never handed over to you, so they are not used.
 
 ## Install
 
