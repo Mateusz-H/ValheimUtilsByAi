@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BepInEx.Configuration;
 using HarmonyLib;
+using TMPro;
 using UnityEngine;
 
 namespace ValheimUtilsByAi.Features;
@@ -194,11 +195,23 @@ internal static class CraftFromContainers
         private static void Finalizer() => _countScope--;
     }
 
-    // Requirement icons in the crafting panel and the build HUD: the amount stops flashing red.
+    // Requirement icons in the crafting panel and the build HUD: the amount stops flashing red when chests cover
+    // it, and reads "have/need" instead of vanilla's "need". The postfix runs before the finalizer, so its count
+    // includes the chests too.
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupRequirement))]
     private static class CountForDisplay
     {
         private static void Prefix() => _countScope++;
+
+        private static void Postfix(Transform elementRoot, Piece.Requirement req, Player player, int quality,
+            int craftMultiplier, bool __result)
+        {
+            if (!__result || !Active(player) || !req.m_resItem) return;
+            var have = player.GetInventory().CountItems(req.m_resItem.m_itemData.m_shared.m_name);
+            var need = req.GetAmount(quality) * craftMultiplier;
+            elementRoot.Find("res_amount").GetComponent<TMP_Text>().text = $"{have}/{need}";
+        }
+
         private static void Finalizer() => _countScope--;
     }
 

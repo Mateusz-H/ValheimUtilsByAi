@@ -141,7 +141,8 @@ it keeps the vanilla delay.
 
 Crafting, upgrading and building count materials in chests you built within `[Crafting] CraftFromContainersRadius`
 (default 15 m) of you. Your own inventory is used first, then the chests. The requirement numbers in the crafting
-panel and build menu stop flashing red when the chests have enough.
+panel and build menu show what you have (inventory plus chests) and what is needed, for example `25/10`, and stop
+flashing red when the chests have enough.
 
 What stays vanilla: carts, ships, tombstones, other players' private chests and chests behind a ward you can't use
 are ignored. The item you upgrade must still be in your inventory. Recipes that take only one of several
