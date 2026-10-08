@@ -24,6 +24,7 @@ public sealed class Plugin : BaseUnityPlugin
         AutoRepair.Bind(Config);
         StationBuildRange.Bind(Config);
         FastCorpseDrop.Bind(Config);
+        CraftFromContainers.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }

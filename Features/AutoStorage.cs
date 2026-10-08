@@ -11,26 +11,20 @@ using UnityEngine;
 
 namespace ValheimUtilsByAi.Features;
 
-// Custom "AutoStorage" chest plus an "AutoStorage Link" hammer tool. The tool links a processing piece (smelter
-// family, beehive, sap collector, cooking station, fermenter) to one AutoStorage chest. The piece's ZDO owner
-// then pulls inputs from that chest and pushes outputs into it on the piece's own vanilla update tick.
+// "AutoStorage Link" hammer tool. It links a processing piece (smelter family, beehive, sap collector, cooking
+// station, fermenter) to one player-built chest. The piece's ZDO owner then pulls inputs from that chest and
+// pushes outputs into it on the piece's own vanilla update tick.
 //
 // The link is stored on the piece as the chest's world position: ZDOIDs are reassigned on every world load,
-// so they cannot be persisted. Chest edits only stick on the chest's ZDO owner, so the piece owner claims the
-// chest before writing and skips the tick while a player has the chest open.
+// so they cannot be persisted. Chest edits only stick on the chest's ZDO owner, so the piece owner asks the
+// chest's owner to hand it over and skips ticks until it owns the chest or while a player has it open.
 internal static class AutoStorage
 {
-    private const string ChestPrefab = "AutoStorage";
     private const string HammerPrefab = "AutoStorageHammer";
     private const string HammerToken = "$item_autostoragehammer";
     private const string LinkPrefab = "AutoStorageLink";
     private const string LinkToken = "$piece_autostoragelink";
-    private const string ChestToken = "$piece_autostorage";
     private const float ChestMatchRadius = 0.5f;
-    private const int ChestWidth = 5;
-    private const int ChestHeight = 2;
-    // Chests built with 0.0.3 were 8x4; their saved items can sit outside the current grid.
-    private const int LegacyChestWidth = 8;
 
     private static readonly int LinkKey = "mh_AutoStorageLink".GetStableHashCode();
 
@@ -44,15 +38,15 @@ internal static class AutoStorage
             "Crafting",
             "AutoStorage",
             true,
-            "Adds the AutoStorage chest and the AutoStorage Link hammer tool. Pieces linked to a chest with it " +
+            "Adds the AutoStorage Link hammer tool. Pieces linked to a chest with it " +
             "(kiln, smelter, blast furnace, spinning wheel, windmill, eitr refinery, beehive, sap collector, " +
             "cooking stations, fermenter) take their inputs from that chest and put their products into it. " +
-            "The chest stays buildable when this is off; only the automation and linking stop.");
+            "When this is off the automation and linking stop; links are kept.");
         _maxLinkDistance = config.Bind(
             "Crafting",
             "AutoStorageMaxLinkDistance",
             100f,
-            "Maximum distance in meters between a piece and the AutoStorage chest it is linked to. " +
+            "Maximum distance in meters between a piece and the chest it is linked to. " +
             "Pieces farther than roughly 64 m from any player are not simulated by the game, so a chest beyond " +
             "that distance from the piece may simply not be loaded.");
         _collectRadius = config.Bind(
@@ -68,24 +62,6 @@ internal static class AutoStorage
     private static void RegisterPrefabs()
     {
         PrefabManager.OnVanillaPrefabsAvailable -= RegisterPrefabs;
-
-        var chestConfig = new PieceConfig
-        {
-            Name = ChestToken,
-            Description = "$piece_autostorage_description",
-            PieceTable = PieceTables.Hammer,
-            Category = PieceCategories.Misc,
-            CraftingStation = CraftingStations.Workbench,
-        };
-        chestConfig.AddRequirement("FineWood", 10, true);
-        chestConfig.AddRequirement("GreydwarfEye", 5, true);
-        chestConfig.AddRequirement("Bronze", 5, true);
-        var chest = new CustomPiece(ChestPrefab, "piece_chest", chestConfig);
-        var container = chest.PiecePrefab.GetComponent<Container>();
-        container.m_name = ChestToken;
-        container.m_width = ChestWidth;
-        container.m_height = ChestHeight;
-        PieceManager.Instance.AddPiece(chest);
 
         // A normal Misc piece cloned from the Repair tool for its icon. Repair/remove flags would make the build
         // menu treat it as a second special button; the ghost and the click are handled by the patches below.
@@ -118,12 +94,9 @@ internal static class AutoStorage
         ItemManager.Instance.AddItem(hammer);
 
         var localization = LocalizationManager.Instance.GetLocalization();
-        localization.AddTranslation(ChestToken.TrimStart('$'), "AutoStorage");
-        localization.AddTranslation("piece_autostorage_description",
-            "Link kilns, smelters, beehives, cooking stations and fermenters to this chest with AutoStorage Link (Hammer > Misc).");
         localization.AddTranslation(LinkToken.TrimStart('$'), "AutoStorage Link");
         localization.AddTranslation("piece_autostoragelink_description",
-            "Click a processing piece, then an AutoStorage chest to link them. Click the pair again to unlink. " +
+            "Click a processing piece, then a chest to link them. Click the pair again to unlink. " +
             "Click a chest with nothing selected to unlink everything from it.");
         localization.AddTranslation(HammerToken.TrimStart('$'), "AutoStorage Hammer");
         localization.AddTranslation("item_autostoragehammer_description",
@@ -132,15 +105,51 @@ internal static class AutoStorage
 
     // ---------------------------------------------------------------- chest registry and link resolution
 
+    private const string RequestOwnRpc = "mh_AutoStorage_RequestOwn";
+
     private static readonly List<Container> Chests = new();
 
+    // Player-built chests only: carts, ship storage, tombstones, the obliterator and loot crates are skipped.
+    // Placement ghosts have no inventory.
     [HarmonyPatch(typeof(Container), "Awake")]
     private static class RegisterChest
     {
         private static void Postfix(Container __instance)
         {
-            if (__instance.name.StartsWith(ChestPrefab, StringComparison.Ordinal)) Chests.Add(__instance);
+            if (__instance.GetInventory() == null) return;
+            var view = ContainerView(__instance);
+            if (view == null || !view.IsValid()) return;
+            var piece = __instance.GetComponent<Piece>();
+            if (piece == null || !piece.IsPlacedByPlayer()) return;
+            if (__instance.m_wagon != null || __instance.m_rootObjectOverride != null || __instance.m_autoDestroyEmpty) return;
+            if (__instance.GetComponentInParent<Ship>() != null || __instance.GetComponentInParent<Incinerator>() != null) return;
+
+            var chest = __instance;
+            view.Register(RequestOwnRpc, sender => RPC_RequestOwn(chest, sender));
+            Chests.Add(chest);
         }
+    }
+
+    // Runs on the chest's owner, which hands the chest over only while nobody has it open, like vanilla
+    // Container.RPC_RequestOpen. Only the owner hands over, so two peers never edit the chest at once.
+    private static void RPC_RequestOwn(Container chest, long sender)
+    {
+        var view = ContainerView(chest);
+        if (!view.IsValid() || !view.IsOwner() || chest.IsInUse()) return;
+        ZDOMan.instance.ForceSendZDO(sender, view.GetZDO().m_uid);
+        view.GetZDO().SetOwner(sender);
+    }
+
+    private static readonly Dictionary<Container, float> NextRequest = new();
+
+    private static void RequestOwnership(Container chest, ZNetView view)
+    {
+        var owner = view.GetZDO().GetOwner();
+        // No owner: the server assigns one within a few seconds.
+        if (owner == 0) return;
+        if (NextRequest.TryGetValue(chest, out var next) && Time.time < next) return;
+        NextRequest[chest] = Time.time + 5f;
+        view.InvokeRPC(owner, RequestOwnRpc);
     }
 
     private static Container? FindChestAt(Vector3 position)
@@ -166,41 +175,9 @@ internal static class AutoStorage
     private static readonly Func<Container, bool> ContainerLoad =
         AccessTools.MethodDelegate<Func<Container, bool>>(AccessTools.Method(typeof(Container), "Load"));
 
-    private static readonly AccessTools.FieldRef<Inventory, int> InventoryWidth =
-        AccessTools.FieldRefAccess<Inventory, int>("m_width");
-    private static readonly Func<Inventory, bool, Vector2i> InventoryFindEmptySlot =
-        AccessTools.MethodDelegate<Func<Inventory, bool, Vector2i>>(AccessTools.Method(typeof(Inventory), "FindEmptySlot"));
-
-    // Vanilla Inventory.Load silently drops saved items whose column is outside the grid, so a 0.0.3 chest (8x4)
-    // would lose columns 5-7 now that the chest is 5x2. Load with the old width, then move every item outside the
-    // grid into a free slot. Items are only repositioned inside the same inventory, never added or removed; what
-    // does not fit stays saved outside the grid (still used by the automation) and moves in on a later load.
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.Load), typeof(ZPackage))]
-    private static class MigrateLegacyChest
-    {
-        private static void Prefix(Inventory __instance, out int __state)
-        {
-            __state = InventoryWidth(__instance);
-            if (__instance.GetName() == ChestToken && __state < LegacyChestWidth) InventoryWidth(__instance) = LegacyChestWidth;
-        }
-
-        private static void Postfix(Inventory __instance, int __state)
-        {
-            if (InventoryWidth(__instance) == __state) return;
-            InventoryWidth(__instance) = __state;
-            var height = __instance.GetHeight();
-            foreach (var item in __instance.GetAllItems())
-            {
-                if (item.m_gridPos.x < __state && item.m_gridPos.y < height) continue;
-                var slot = InventoryFindEmptySlot(__instance, false);
-                if (slot.x < 0) return;
-                item.m_gridPos = slot;
-            }
-        }
-    }
-
     // Inventory of the linked chest, ready to edit from this peer, or null when the chest is missing, too far,
-    // open in someone's UI, or not loaded. Claiming ownership is what makes Container.Save persist our edits.
+    // open in someone's UI, not loaded, or owned by another peer (ownership is then requested for a later tick).
+    // Only the owner's edits are saved by Container.OnContainerChanged.
     private static Inventory? WritableInventory(ZNetView pieceView)
     {
         if (!_enabled.Value || !pieceView.IsValid() || !pieceView.IsOwner()) return null;
@@ -210,7 +187,7 @@ internal static class AutoStorage
         var chestView = ContainerView(chest);
         if (chestView == null || !chestView.IsValid()) return null;
         if (chest.IsInUse() || chestView.GetZDO().GetInt(ZDOVars.s_inUse) == 1) return null;
-        if (!chestView.IsOwner()) chestView.ClaimOwnership();
+        if (!chestView.IsOwner()) { RequestOwnership(chest, chestView); return null; }
         ContainerLoad(chest);
         return chest.GetInventory();
     }
@@ -556,7 +533,7 @@ internal static class AutoStorage
         var piece = LinkablePiece(hovered);
         if (piece == null || !piece.IsValid())
         {
-            player.Message(MessageHud.MessageType.Center, "Not a processing piece or AutoStorage chest");
+            player.Message(MessageHud.MessageType.Center, "Not a processing piece or chest");
             return;
         }
         if (_selectedPiece == piece)
@@ -566,7 +543,7 @@ internal static class AutoStorage
             return;
         }
         _selectedPiece = piece;
-        player.Message(MessageHud.MessageType.Center, "Selected, now click an AutoStorage chest");
+        player.Message(MessageHud.MessageType.Center, "Selected, now click a chest");
     }
 
     private static readonly AccessTools.FieldRef<Player, GameObject?> PlacementGhost =
