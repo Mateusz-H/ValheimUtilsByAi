@@ -14,7 +14,7 @@
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <!-- Game assemblies: Steam client install or the free dedicated server (SteamCMD app 896660). Override: -p:ValheimManaged=... -->
-    <ValheimManaged Condition="'$(ValheimManaged)' == ''">C:\Users\mateu\valheim_server\valheim_server_Data\Managed</ValheimManaged>
+    <ValheimManaged Condition="'$(ValheimManaged)' == ''">C:/Users/mateu/valheim_server/valheim_server_Data/Managed</ValheimManaged>
     <ThunderstoreDir>$(MSBuildProjectDirectory)\thunderstore</ThunderstoreDir>
     <PackageStageDir>$(BaseIntermediateOutputPath)thunderstore-stage\</PackageStageDir>
     <PackageZip>$(MSBuildProjectDirectory)\dist\$(AssemblyName)-$(Version).zip</PackageZip>
@@ -26,13 +26,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="assembly_valheim" HintPath="$(ValheimManaged)\assembly_valheim.dll" Private="false" />
-    <Reference Include="UnityEngine" HintPath="$(ValheimManaged)\UnityEngine.dll" Private="false" />
-    <Reference Include="UnityEngine.CoreModule" HintPath="$(ValheimManaged)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="assembly_valheim" HintPath="$(ValheimManaged)/assembly_valheim.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(ValheimManaged)/UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(ValheimManaged)/UnityEngine.CoreModule.dll" Private="false" />
   </ItemGroup>
 
   <Target Name="FailIfGameAssembliesMissing" BeforeTargets="ResolveAssemblyReferences">
-    <Error Condition="!Exists('$(ValheimManaged)\assembly_valheim.dll')"
+    <Error Condition="!Exists('$(ValheimManaged)/assembly_valheim.dll')"
            Text="assembly_valheim.dll not found in '$(ValheimManaged)'. Pass -p:ValheimManaged=&lt;path to Valheim_Data\Managed&gt;." />
   </Target>
 

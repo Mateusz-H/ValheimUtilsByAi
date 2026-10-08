@@ -1,0 +1,30 @@
+# Used only by `tcli publish --file` in CI. Package metadata inside the zip comes from thunderstore/manifest.json.
+[config]
+schemaVersion = "0.0.1"
+
+[package]
+namespace = "ByAi"
+name = "ValheimUtils"
+versionNumber = "0.0.0"
+description = "AI-generated quality-of-life tweaks for Valheim. Every feature is toggleable in the BepInEx config."
+websiteUrl = "https://github.com/Mateusz-H/ValheimUtilsByAi"
+containsNsfwContent = false
+
+[package.dependencies]
+denikson-BepInExPack_Valheim = "5.4.2351"
+
+[build]
+icon = "./thunderstore/icon.png"
+readme = "./thunderstore/README.md"
+outdir = "./dist"
+
+[[build.copy]]
+source = "./bin/Release"
+target = ""
+
+[publish]
+repository = "https://thunderstore.io"
+communities = ["valheim"]
+
+[publish.categories]
+valheim = ["ai-generated", "mods", "crafting", "client-side"]

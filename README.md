@@ -1,6 +1,7 @@
 # ValheimUtilsByAi (dev)
 
-BepInEx 5 plugin for Valheim. See `thunderstore/README.md` for the user-facing description.
+BepInEx 5 plugin for Valheim, published as [ByAi-ValheimUtils](https://thunderstore.io/package/ByAi/ValheimUtils/).
+See `thunderstore/README.md` for the user-facing description and `CLAUDE.md` for conventions.
 
 ## Build
 
@@ -13,5 +14,10 @@ Then:
 
     dotnet build -c Release -p:ValheimManaged="C:\valheim_server\valheim_server_Data\Managed"
 
-`dist/ValheimUtilsByAi-<version>.zip` is the Thunderstore upload. Bump `<Version>` in the
-csproj and add a `CHANGELOG.md` entry before publishing.
+`dist/ValheimUtilsByAi-<version>.zip` is the Thunderstore package.
+
+## Release
+
+Push a tag `vX.Y.Z` on `main` whose version matches `<Version>` in the csproj and a `## X.Y.Z` section in
+`thunderstore/CHANGELOG.md`. GitHub Actions builds, creates the GitHub Release and publishes to Thunderstore.
+Requires the `THUNDERSTORE_API_TOKEN` repository secret (Thunderstore team ByAi, service account token).

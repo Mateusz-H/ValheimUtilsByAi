@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VALHEIM_DIR: ${{ runner.temp }}/valheim
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches csproj version and changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          grep -q "<Version>$VERSION</Version>" ValheimUtilsByAi.csproj || { echo "::error::csproj <Version> is not $VERSION"; exit 1; }
+          grep -q "^## $VERSION\b" thunderstore/CHANGELOG.md || { echo "::error::thunderstore/CHANGELOG.md has no '## $VERSION' section"; exit 1; }
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Download Valheim dedicated server (game assemblies)
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lib32gcc-s1
+          mkdir -p "$RUNNER_TEMP/steamcmd"
+          curl -sL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar -xz -C "$RUNNER_TEMP/steamcmd"
+          "$RUNNER_TEMP/steamcmd/steamcmd.sh" +force_install_dir "$VALHEIM_DIR" +login anonymous +app_update 896660 +quit
+          test -f "$VALHEIM_DIR/valheim_server_Data/Managed/assembly_valheim.dll"
+
+      - name: Build
+        run: dotnet build -c Release -p:ValheimManaged="$VALHEIM_DIR/valheim_server_Data/Managed"
+
+      - name: Extract release notes
+        run: awk -v v="$VERSION" '/^## /{p = ($2 == v)} p' thunderstore/CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+
+      - name: GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/ValheimUtilsByAi-${{ env.VERSION }}.zip
+          body_path: ${{ runner.temp }}/notes.md
+
+      - name: Publish to Thunderstore
+        run: |
+          dotnet tool install -g tcli
+          sed -i "s/^versionNumber = .*/versionNumber = \"$VERSION\"/" thunderstore.toml
+          tcli publish --file "dist/ValheimUtilsByAi-$VERSION.zip" --token "${{ secrets.THUNDERSTORE_API_TOKEN }}"
