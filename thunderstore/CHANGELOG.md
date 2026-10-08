@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Auto map sync: being within 30 m of a cartography table syncs your map and pins with it automatically (toggleable).
+
 ## 0.0.3
 
 - Auto storage: craftable AutoStorage chest and AutoStorage Hammer; linked kilns, smelters, beehives, sap extractors, cooking stations and fermenters pull inputs from and push products into the chest (toggleable). Adds Jötunn as a dependency.

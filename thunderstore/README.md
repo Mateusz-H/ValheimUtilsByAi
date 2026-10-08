@@ -57,6 +57,18 @@ Side: Both. The mod (and Jötunn) must be installed on the server and on every c
 chest and hammer do not exist for them. Turning the feature off keeps both craftable but stops linking and
 automation.
 
+### Auto map sync (`[World] AutoMapSync`, default: on)
+
+Build a cartography table at your base and everyone who comes near it shares one map. Within 30 m of a
+cartography table your explored map and pins are synced with it automatically: whenever someone else writes
+to the table you get their data within about 10 seconds, and your own map is written when you arrive and
+then every 5 minutes while you stay. No clicking "Read map" / "Record map" needed. The data is stored in
+the table exactly like vanilla, so manual reading and writing still work, warded tables still need access
+to write, and death markers are not shared.
+
+Side: Client. Each player who wants automatic syncing needs the mod; players without it can still use the
+table by hand.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires

@@ -18,6 +18,7 @@ public sealed class Plugin : BaseUnityPlugin
         CraftWithoutRoof.Bind(Config);
         KilnWoodFilter.Bind(Config);
         AutoStorage.Bind(Config);
+        AutoMapSync.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }
