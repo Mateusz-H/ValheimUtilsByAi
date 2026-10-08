@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.7
+
 - Auto storage: linking moved into the vanilla Hammer as AutoStorage Link (Misc tab); the AutoStorage Hammer item is removed and refunded as 3 Wood and 1 Surtling Core.
 
 ## 0.0.6
