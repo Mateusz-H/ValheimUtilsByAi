@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Fix: craft from containers and AutoStorage Link ignored newly built chests (and some older ones at random).
+- Craft from containers: requirement amounts show have/need (inventory plus nearby chests), e.g. `25/10`.
+
 ## 0.0.9
 
 - Craft and build from nearby containers: crafting, upgrading and building use materials from chests within 15 m (`CraftFromContainersRadius`), multiplayer safe.
