@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.6
+
 - Auto repair at crafting stations: opening a station repairs all items it can repair, no clicking.
 
 ## 0.0.5
