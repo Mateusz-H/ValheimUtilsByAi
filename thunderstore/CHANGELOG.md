@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Carts and ships on map: every cart and ship in the world shows on the map and minimap with its build-menu icon. Turn it off with `[World] VehiclesOnMap`.
+
 - Portal map travel: every portal is now shown on the large map (M) all the time, not only after stepping into a portal. These pins are for viewing only. Turn it off with `[World] PortalsOnMap`.
 
 ## 0.0.12
