@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Portal map travel: every portal is now shown on the large map (M) all the time, not only after stepping into a portal. These pins are for viewing only. Turn it off with `[World] PortalsOnMap`.
+
 ## 0.0.12
 
 - Portal map travel: portal pins have their own icon, pulse slowly and are always drawn above other pins. Hiding a pin type in the map filter no longer hides them, and choosing a portal no longer turns a hidden filter back on.
