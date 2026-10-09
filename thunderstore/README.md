@@ -292,6 +292,17 @@ Side: Both. The server sends every cart and ship to all players so they are visi
 mod on the server you only see vehicles you've been near this session, at the last place you saw them. Players without
 the mod see vanilla maps.
 
+### Higher breeding limit (`[World] BreedingLimit`, default: on)
+
+Tamed boars, wolves, lox, chickens and every other breedable animal keep breeding until `[World] BreedingLimitCount`
+animals of their kind, adults and young together, stand within 10 m (default 20, max 100); vanilla stops at a handful.
+Everything else stays vanilla: animals must still be tamed, fed and not alerted, need a partner close by, and the
+love points, pregnancy time and 10 m counting radius are unchanged. A herd spread wider than 10 m can still grow past
+the limit, as in vanilla.
+
+Side: Both. Breeding is decided by whoever owns the animal, usually the game of the nearest player, so install it on
+the server and on the client of every player who keeps animals.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
