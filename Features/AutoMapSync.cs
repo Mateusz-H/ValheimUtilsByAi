@@ -116,7 +116,9 @@ internal static class AutoMapSync
             Minimap __instance, bool ___m_hasGenerated, List<Minimap.PinData> ___m_pins, Minimap.PinData? ___m_namePin)
         {
             if (!_enabled.Value || Game.m_noMap || Player.m_localPlayer == null || !___m_hasGenerated) return;
-            if (_pendingSharedMap != null) ApplySharedMap(__instance);
+            // Applying before our own join upload would drop pins only we hold (vanilla deletes other players' pins
+            // missing from the shared map); the server answers that upload with the merged map anyway.
+            if (_pendingSharedMap != null && _ownPinsAtLastUpload != null) ApplySharedMap(__instance);
             // A pin being named is still nameless; uploaded now, it would stay nameless for everyone else.
             if (Time.time < _nextUpload || ___m_namePin != null || !TryGetServer(out long server)) return;
 
