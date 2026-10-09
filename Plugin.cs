@@ -26,6 +26,7 @@ public sealed class Plugin : BaseUnityPlugin
         FastCorpseDrop.Bind(Config);
         CraftFromContainers.Bind(Config);
         ComfortRange.Bind(Config);
+        ExtensionRange.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }
