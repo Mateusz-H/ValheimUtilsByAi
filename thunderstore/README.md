@@ -173,17 +173,19 @@ Crafting, upgrading and building count materials in chests built by any player w
 panel and build menu show what you have (inventory plus chests) and what is needed, for example `25/10`, and stop
 flashing red when the chests have enough.
 
-What stays vanilla: carts, ships, tombstones, other players' private chests and chests behind a ward you can't use
-are ignored. The item you upgrade must still be in your inventory. Recipes that take only one of several
-ingredients still use your inventory only. Recipe discovery still comes only from what you carry, and no-cost mode
-never touches chests.
+What stays vanilla: carts, ships, tombstones, feeding troughs, other players' private chests and chests behind a ward
+you can't use are ignored. The item you upgrade must still be in your inventory. Recipes that take only one of
+several ingredients still use your inventory only, and their amounts don't count chests. Recipe discovery still comes
+only from what you carry, and no-cost mode never touches chests.
 
-Multiplayer: a chest is used only while your game owns it, so nothing is duplicated or lost. If another player's game
-owns it, yours asks for it, and their game hands it over only while nobody has it open. A chest someone is looking
-into is skipped until they close it. If two players craft from the same chest at the same time, it can take a
-second or two before the chest counts for you.
+Multiplayer: materials are only taken from a chest while your game holds it, so nothing is duplicated or lost. When
+you click Craft or pick a build piece, your game asks for the chests holding its materials, the same way the game
+asks when you open a chest. A chest another player has open is not counted until they close it. If another player is
+crafting from a chest you need, your craft says "Chest busy, try again" and takes nothing; a build click that needs a
+chest your game doesn't hold yet says "Fetching materials, click again". The next try works.
 
-Side: Both. Chests owned by a player without the mod are never handed over to you, so they are not used.
+Side: Client. Works for you alone; nobody else needs the mod (owners without the mod hand chests over through the
+vanilla open request).
 
 ### Comfort range (`[Building] ComfortRange`, default: on)
 
