@@ -170,8 +170,10 @@ Side: Both. Chests owned by a player without the mod are never handed over to yo
 ### Comfort range (`[Building] ComfortRange`, default: on)
 
 Beds, chairs, rugs, banners, fires and every other comfort piece count towards your comfort level from up to
-`[Building] ComfortRangeMeters` away (default 20 m; vanilla is 10 m, max 100). Which pieces stack, their comfort values
-and the shelter requirement stay vanilla.
+`[Building] ComfortRangeMeters` away (default 20 m; vanilla is 10 m, max 64). Which pieces stack, their comfort values
+and the shelter requirement stay vanilla. As in vanilla, pieces count through walls and floors, from any player, and
+meads count as a chair. Resting still starts only near a burning fire, sitting or under a roof; the longer range only
+raises the comfort level, which sets how long Rested lasts.
 
 Side: Client. Only players with the mod get the longer range; the rested buff itself is unchanged for everyone else.
 

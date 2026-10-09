@@ -17,14 +17,17 @@ internal static class ComfortRange
             "ComfortRange",
             true,
             "Beds, chairs, rugs, fires and other comfort pieces count towards your comfort level from up to " +
-            "ComfortRangeMeters away instead of the vanilla 10 m.");
+            "ComfortRangeMeters away instead of the vanilla 10 m. " +
+            "Resting still starts only near a burning fire, sitting or under a roof; the longer range only " +
+            "raises the comfort level, which sets how long Rested lasts.");
         _rangeMeters = config.Bind(
             "Building",
             "ComfortRangeMeters",
             20f,
             new ConfigDescription(
                 "How far from you, in meters, a comfort piece still counts. Vanilla is 10.",
-                new AcceptableValueRange<float>(1f, 100f)));
+                // Only loaded pieces count, and the lowest Simulation Distance loads only 64 m around the player.
+                new AcceptableValueRange<float>(1f, 64f)));
     }
 
     private static void Prefix(ref float radius)
