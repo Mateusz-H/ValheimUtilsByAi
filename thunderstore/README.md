@@ -10,12 +10,19 @@ whether it runs on the client, the server, or both.
 
 ### Craft without roof (`[Crafting] CraftWithoutRoof`, default: on)
 
-The vanilla game refuses to open a workbench, forge or any other crafting station that is
-not under a roof or is "too exposed". This removes that check. Everything else is untouched:
-a forge still needs fire, stations still need their extensions in range, build pieces still
-need a station nearby.
+Vanilla refuses to use the workbench, forge, stonecutter, artisan table, black forge, galdr table, food preparation
+table, fermenter, spinning wheel and beds without a roof, or when they are "too exposed" (not enough walls and roof
+around them). With this on they all work in the open: the fermenter can be filled and keeps fermenting, the spinning
+wheel keeps spinning, and a bed can be claimed, set as your spawn point and slept in.
 
-Side: Client. Other players do not need the mod. Works on vanilla servers.
+Everything else stays vanilla: the cauldron and mead ketill never needed a roof and still need a fire, stations still
+need their extensions in range, and build pieces still need a station nearby. A bed still needs a fire nearby and no
+enemies around, and you can't sleep while wet, so rain still keeps you out of an open-air bed.
+
+Side: Client. For crafting stations and beds only the player using them needs the mod. A fermenter or spinning wheel
+works in the open only while the game that controls it has the mod: always in single player; in multiplayer usually
+the first player who came near it. While a player without the mod controls it, it stalls outdoors as in vanilla, and a
+fermenter starts over. The server doesn't need the mod; works on vanilla servers.
 
 ### Kiln wood filter (`[Crafting] KilnWoodFilter`, default: on)
 
@@ -49,8 +56,9 @@ The separate AutoStorage Hammer from earlier versions is gone: any copy in your 
 | Cooking station, iron cooking station, stone oven | raw food, wood for the oven | cooked (or burnt) food |
 | Fermenter | base mead | mead |
 
-Vanilla rules stay: fire, fuel, roof, cover and biome requirements are untouched, the chest must have room or
-the product drops on the ground as usual, and nothing moves while a player has the chest open.
+Vanilla rules stay: fire, fuel, roof, cover and biome requirements are untouched (Craft without roof lifts roof
+and cover), the chest must have room or the product drops on the ground as usual, and nothing moves while a player
+has the chest open.
 `[Crafting] AutoStorageMaxLinkDistance` (default 100 m) caps the link length. Pieces are only simulated near a
 player, so a chest more than roughly 64 m from its piece may not be loaded and the piece then idles.
 
