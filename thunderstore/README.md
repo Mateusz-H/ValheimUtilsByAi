@@ -175,9 +175,12 @@ Side: Client. Only players with the mod get the longer range; the rested buff it
 ### Station extension range (`[Building] ExtensionRange`, default: on)
 
 Chopping blocks, tanning racks, bellows, anvils and every other station extension upgrade a crafting station from up
-to `[Building] ExtensionRangeMeters` away (default 10 m; vanilla is 5 m, max 50), and the hammer lets you place them
-that far from the station. As in vanilla, one extension upgrades every station of its kind within range, each type
-counts once per station, and extensions still need their vanilla spacing from each other.
+to `[Building] ExtensionRangeMeters` away (default 10 m, max 50; vanilla is 2-5 m depending on the extension, and the
+setting never shrinks it), and the hammer lets you place them that far from the station. As in vanilla, one extension
+upgrades every station of its kind within range, each type counts once per station, and extensions still need their
+vanilla spacing from each other. Distant extensions also give the vanilla upgrade bonus: each extension type adds
+3-4 m to the station's build radius and to the area around it where enemies don't spawn (the cauldron has only the
+build radius).
 
 Side: Client. Every player who wants the higher station level or the relaxed placement needs the mod; the station
 level is computed on each client.

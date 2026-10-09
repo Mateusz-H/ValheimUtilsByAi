@@ -5,9 +5,11 @@ using UnityEngine;
 
 namespace ValheimUtilsByAi.Features;
 
-// Every read of StationExtension.m_maxStationDistance goes through two methods: the static FindExtensions, which each
+// Vanilla reads StationExtension.m_maxStationDistance through two methods: the static FindExtensions, which each
 // station calls every 2 s to collect its extensions, and the instance FindClosestStationInRange, which the placement
-// ghost and the hover connection line use. The field is swapped for the duration of each call and restored afterwards.
+// ghost and the hover connection line use. The field is raised to at least ExtensionRangeMeters for the duration of
+// each call and restored afterwards. The third reader, FindStationsInRange(Vector3), has no vanilla caller and is
+// deliberately not patched.
 internal static class ExtensionRange
 {
     private static ConfigEntry<bool> _enabled = null!;
@@ -23,14 +25,16 @@ internal static class ExtensionRange
             "Building",
             "ExtensionRange",
             true,
-            "Workbench and forge extensions (chopping block, tanning rack, bellows, ...) work from up to " +
-            "ExtensionRangeMeters away from the station instead of the vanilla 5 m, and can be placed that far away.");
+            "Extensions of the workbench, forge, black forge, artisan table, galdr table and cauldron (chopping " +
+            "block, tanning rack, bellows, ...) work from up to ExtensionRangeMeters away from the station instead " +
+            "of their vanilla 2-5 m, and can be placed that far away.");
         _rangeMeters = config.Bind(
             "Building",
             "ExtensionRangeMeters",
             10f,
             new ConfigDescription(
-                "How far from a crafting station, in meters, an extension still upgrades it. Vanilla is 5.",
+                "How far from a crafting station, in meters, an extension still upgrades it. Vanilla is 2-5 " +
+                "depending on the extension; this setting never shrinks a range.",
                 new AcceptableValueRange<float>(1f, 50f)));
     }
 
@@ -46,7 +50,7 @@ internal static class ExtensionRange
             foreach (var extension in extensions)
             {
                 __state.Add(extension.m_maxStationDistance);
-                extension.m_maxStationDistance = _rangeMeters.Value;
+                extension.m_maxStationDistance = Mathf.Max(extension.m_maxStationDistance, _rangeMeters.Value);
             }
         }
 
@@ -66,7 +70,7 @@ internal static class ExtensionRange
         {
             __state = __instance.m_maxStationDistance;
             if (!_enabled.Value) return;
-            __instance.m_maxStationDistance = _rangeMeters.Value;
+            __instance.m_maxStationDistance = Mathf.Max(__state, _rangeMeters.Value);
         }
 
         private static void Postfix(StationExtension __instance, float __state)
