@@ -40,27 +40,29 @@ internal static class AutoDoors
     {
         Player player = Player.m_localPlayer;
         ZNetView nview = NView(__instance);
-        if (!_enabled.Value || player == null || !nview.IsValid())
+        if (!nview.IsValid())
         {
             Opened.Remove(__instance);
             return;
         }
 
         Vector3 doorPos = __instance.transform.position;
-        float distance = Vector3.Distance(player.transform.position, doorPos);
         bool isOpen = nview.GetZDO().GetInt(ZDOVars.s_state) != 0;
+        // Dying, teleporting or turning the feature off counts as walking away: the body stays next to the door until
+        // respawn and a portal unloads the door before the player is 4 m from it, which left the door open for good.
+        bool away = !_enabled.Value || player == null || player.IsDead() || player.IsTeleporting() ||
+            Vector3.Distance(player.transform.position, doorPos) >= CloseRange;
 
         if (Opened.Contains(__instance))
         {
-            if (distance < CloseRange) return;
             // Someone else still standing in the doorway keeps it open; this client closes it once they leave.
-            if (Player.IsPlayerInRange(doorPos, CloseRange)) return;
-            if (isOpen && CanInteract(__instance)) Open(__instance, player.transform.position - doorPos);
+            if (!away || OtherPlayerInRange(doorPos)) return;
+            if (isOpen && CanInteract(__instance)) Open(__instance, __instance.transform.forward);
             if (!isOpen || CanInteract(__instance)) Opened.Remove(__instance);
             return;
         }
 
-        if (isOpen || distance > OpenRange || player.IsDead()) return;
+        if (isOpen || away || Vector3.Distance(player!.transform.position, doorPos) > OpenRange) return;
         Piece piece = __instance.GetComponent<Piece>();
         // Generated doors (dungeons, crypts, villages) have no creator; keyed and one-way doors stay manual.
         if (piece == null || piece.GetCreator() == 0L || __instance.m_keyItem != null || __instance.m_canNotBeClosed) return;
@@ -68,6 +70,31 @@ internal static class AutoDoors
         if (__instance.m_checkGuardStone && !PrivateArea.CheckAccess(doorPos, 0f, flash: false)) return;
 
         Open(__instance, player.transform.position - doorPos);
+        Opened.RemoveWhere(door => door == null);
         Opened.Add(__instance);
+    }
+
+    private static bool OtherPlayerInRange(Vector3 doorPos)
+    {
+        foreach (Player other in Player.GetAllPlayers())
+        {
+            if (other != Player.m_localPlayer && !other.IsDead() && Vector3.Distance(other.transform.position, doorPos) < CloseRange) return true;
+        }
+        return false;
+    }
+
+    // Logging out next to an open door: close it while the connection still carries the request.
+    [HarmonyPatch(typeof(Game), "Shutdown")]
+    private static class CloseOnShutdown
+    {
+        private static void Prefix()
+        {
+            foreach (Door door in Opened)
+            {
+                if (door == null || !NView(door).IsValid() || NView(door).GetZDO().GetInt(ZDOVars.s_state) == 0) continue;
+                if (CanInteract(door)) Open(door, door.transform.forward);
+            }
+            Opened.Clear();
+        }
     }
 }

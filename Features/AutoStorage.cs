@@ -221,13 +221,44 @@ internal static class AutoStorage
     }
 
     // Set even when empty, never removed: a removed ZDO key is not sent to the other peers.
-    private static void WriteChestPositions(ZNetView piece, Direction direction, List<Vector3> positions)
+    private static void WriteChestPositions(ZDO zdo, Direction direction, List<Vector3> positions)
     {
         var package = new ZPackage();
         package.Write(positions.Count);
         foreach (var position in positions) package.Write(position);
-        piece.ClaimOwnership();
-        piece.GetZDO().Set(ChestsKey(direction), package.GetArray());
+        zdo.Set(ChestsKey(direction), package.GetArray());
+    }
+
+    private const string SetLinkRpc = "mh_AutoStorage_SetLink";
+
+    [HarmonyPatch(typeof(ZNet), "Awake")]
+    private static class RegisterSetLinkRpc
+    {
+        private static void Postfix() =>
+            ZRoutedRpc.instance.Register<ZDOID, int, bool, Vector3>(SetLinkRpc, RPC_SetLink);
+    }
+
+    // A link edit goes to the piece's owner instead of claiming the piece: the owner's copy has a newer data revision
+    // (the piece's update tick writes its ZDO every second), so ZDOMan drops a claimer's older data and the edit was
+    // lost; when the claimer's copy won instead, what the owner had just queued was lost. The owner applies the edit
+    // to its current list, so two quick edits from different players both stick.
+    private static void SendLinkEdit(ZNetView piece, Direction direction, bool add, Vector3 chestPosition)
+    {
+        var zdo = piece.GetZDO();
+        // No owner: nobody simulates the piece, so claiming it loses nothing.
+        if (zdo.GetOwner() == 0L) piece.ClaimOwnership();
+        ZRoutedRpc.instance.InvokeRoutedRPC(zdo.GetOwner(), SetLinkRpc, zdo.m_uid, (int)direction, add, chestPosition);
+    }
+
+    // Dropped when ownership moved on while the edit was on its way; the player sees the link missing and clicks again.
+    private static void RPC_SetLink(long sender, ZDOID pieceId, int direction, bool add, Vector3 chestPosition)
+    {
+        var zdo = ZDOMan.instance.GetZDO(pieceId);
+        if (zdo == null || !zdo.IsOwner()) return;
+        var positions = ReadChestPositions(zdo, (Direction)direction) ?? new List<Vector3>();
+        var removed = RemoveChest(positions, chestPosition);
+        if (add) positions.Add(chestPosition);
+        if (add || removed) WriteChestPositions(zdo, (Direction)direction, positions);
     }
 
     private static bool RemoveChest(List<Vector3> positions, Vector3 chestPosition) =>
@@ -358,6 +389,9 @@ internal static class AutoStorage
             if (!drop.CanPickup()) continue;
 
             drop.Load();
+            // Something a player had in their inventory and dropped on purpose (handing it over, sorting) stays put;
+            // fresh products have never been picked up. m_pickedUp is saved in the drop's ZDO, so every peer agrees.
+            if (drop.m_itemData.m_pickedUp) continue;
             var stack = drop.m_itemData.m_stack;
             var left = stack;
             foreach (var inventory in outputs)
@@ -669,8 +703,7 @@ internal static class AutoStorage
             }
             var positions = ReadChestPositions(selected.GetZDO(), direction) ?? new List<Vector3>();
             var unlinked = RemoveChest(positions, chestPosition);
-            if (!unlinked) positions.Add(chestPosition);
-            WriteChestPositions(selected, direction, positions);
+            SendLinkEdit(selected, direction, !unlinked, chestPosition);
             player.Message(MessageHud.MessageType.Center, unlinked ? $"Unlinked {Kind(direction)} chest" : $"Linked {Kind(direction)} chest");
             return;
         }
@@ -708,7 +741,7 @@ internal static class AutoStorage
             if (view == null || !view.IsValid()) continue;
             var positions = ReadChestPositions(view.GetZDO(), direction);
             if (positions == null || !RemoveChest(positions, chestPosition)) continue;
-            WriteChestPositions(view, direction, positions);
+            SendLinkEdit(view, direction, false, chestPosition);
             unlinked++;
         }
         player.Message(MessageHud.MessageType.Center,

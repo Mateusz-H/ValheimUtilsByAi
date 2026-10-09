@@ -485,27 +485,29 @@ internal static class CraftFromContainers
     }
 
     // Each held item goes back to its chest if this peer still owns it and it has room, else to the inventory, else
-    // to the ground. The chest comes first on shutdown too: if the take hadn't reached the server yet, a return to the
-    // inventory would leave the materials in both places; a chest return can at worst be lost, never doubled.
+    // to the ground.
     private static void ReturnHeld()
     {
         _stillMissing = null;
         if (Held.Count == 0) return;
         var player = Player.m_localPlayer;
-        // A client that lost the server can't tell whether the take reached it. The chest only: anywhere else the
-        // materials could exist twice, in the server's chest and in the saved inventory or a drop.
+        // A client that lost the server (Game.FixedUpdate logs out, Shutdown runs this) can no longer send the chest or
+        // a drop: the server peer is already gone when ZDOMan flushes, so a chest return was always lost. The
+        // inventory is saved by SavePlayerProfile right after. The take reached the server long before the timeout
+        // that ends the connection (ZDOs go out every 0.05 s), so this doubles the materials only if the connection
+        // was already dead when Craft was clicked.
         var offline = ZNet.instance != null && !ZNet.instance.IsServer() && ZNet.instance.GetServerPeer() == null;
         foreach (var held in Held)
         {
             var chest = held.Chest;
             var item = held.Item;
-            if (IntoChest(chest, item)) continue;
+            if (!offline && IntoChest(chest, item)) continue;
+            if (player != null && player.GetInventory().CanAddItem(item) && player.GetInventory().AddItem(item)) continue;
             if (offline)
             {
                 Plugin.Log.LogWarning($"CraftFromContainers: {item.m_stack} x {item.m_shared.m_name} could not be returned while disconnected");
                 continue;
             }
-            if (player != null && player.GetInventory().CanAddItem(item) && player.GetInventory().AddItem(item)) continue;
             var position = player != null ? player.transform.position + Vector3.up : chest != null ? chest.transform.position + Vector3.up : (Vector3?)null;
             if (position == null) { Plugin.Log.LogWarning($"CraftFromContainers: {item.m_stack} x {item.m_shared.m_name} could not be returned"); continue; }
             ItemDrop.DropItem(item, item.m_stack, position.Value, Quaternion.identity);

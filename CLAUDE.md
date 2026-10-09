@@ -6,6 +6,8 @@ Features may be client-side, server-side or both; each one says which in `thunde
 ## Workflows
 
 - `/add-feature <description>`: implement a toggleable feature the standard way (research, patch, config, docs, smoke test, branch).
+- `/review-feature [Name ...|all]`: read-only bug review against `.claude/skills/review-feature/checklist.md`
+  (soft-locks, interrupted flows, item loss, multiplayer, toggles). Default: features changed on the branch.
 - `/deploy [patch|minor|major|X.Y.Z]`: bump version, finalize changelog, tag, push. CI publishes.
 
 ## Build and test

@@ -81,7 +81,8 @@ Products that still landed on the ground (output chests full, open or not loaded
 once a minute each piece with an output chest moves items of the kinds it makes lying within
 `[Crafting] AutoStorageCollectRadius` (default 5 m, 0 turns it off) into its output chests. Items are matched by kind,
 not by where they came from: a cooking station, which makes coal from burnt food, also takes coal from a nearby kiln.
-Items placed as decoration, such as food on tables, are never taken. A drop is only taken by the game that owns it,
+Items placed as decoration, such as food on tables, are never taken, and neither is anything a player carried and
+dropped, so bars dropped next to a smelter to hand them over stay on the ground. A drop is only taken by the game that owns it,
 exactly like a vanilla pickup, and leaves the ground only as far as it went into a chest, so nothing is duplicated or
 lost.
 
@@ -206,8 +207,8 @@ open a chest. A craft takes what your inventory lacks out of the chests right wh
 game didn't hold yet as soon as they arrive, usually a fraction of a second) and holds it until the craft finishes, so
 other players can open those chests during the craft. If you cancel the craft, close the inventory or walk away, the
 materials go back to their chest; if that chest is full or another game holds it now, into your inventory, and if
-that is full too, onto the ground. Only a crash, or losing the connection during the craft, can lose them: without
-a connection they only go back to their chest, never to your inventory or the ground, so they can never exist twice.
+that is full too, onto the ground. If you lose the connection during the craft they go into your inventory, since the
+server can no longer receive them back into the chest; only a crash, or a full inventory at that moment, loses them.
 A chest another player has open is not counted until they close it. If a chest you need never arrives, your craft
 says "Chest busy, try again" and takes nothing; a build click that needs a chest your game doesn't hold yet says
 "Fetching materials, click again". The next try works.
