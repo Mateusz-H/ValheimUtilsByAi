@@ -185,6 +185,15 @@ The map pins are temporary and never saved.
 Side: Both. The client part works alone but only shows portals your game has already seen; with the mod on the
 server every portal in the world is listed. Other players without the mod keep vanilla portals.
 
+### Plant growth timer (`[World] PlantGrowthTimer`, default: on)
+
+Hovering a planted sapling (carrots, turnips, onions, barley, flax, trees, Mistlands mushrooms, ...) adds a line
+under the vanilla "( Healthy )" text: `grows in 1h 05m`. Planted bushes and mushrooms from Farm everything show
+`<name>` and the same line while they are bare (vanilla shows nothing there). Wild plants are untouched. The time is
+the real growth time of that exact plant, so it already includes the random part of the vanilla grow time.
+
+Side: Client. Only you see the text; other players do not need the mod.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires

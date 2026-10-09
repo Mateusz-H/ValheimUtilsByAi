@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Plant growth timer: hovering a sapling or a bare planted bush shows how long until it grows.
+
 - Portal map travel: stepping into a portal opens the map with every portal pinned; click one to travel there.
 
 - Station extension range: extensions upgrade stations from up to `ExtensionRangeMeters` away (default 10 m, vanilla 5 m) and can be placed that far.
