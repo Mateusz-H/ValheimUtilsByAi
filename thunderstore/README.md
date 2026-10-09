@@ -128,10 +128,12 @@ Side: Client. Other players and the server don't need the mod.
 
 ### Larger crafting station build range (`[Building] StationBuildRange`, default: on)
 
-You can build farther from a workbench, forge or any other crafting station: its build range is
-`[Building] StationBuildRangeMeters` (default 40 m; vanilla is 20 m, max 100). The circle shown around the station grows
-with it. Changes apply within two seconds. Any bonus from station upgrades, the station's own area effect, crafting
-distance and upgrade rules stay vanilla.
+You can build farther from a workbench, forge or other crafting station: its build range is raised to
+`[Building] StationBuildRangeMeters` (default 40 m; vanilla is 20 m, artisan table 40 m, max 64), and the circle shown
+around the station grows with it. The setting never shrinks a range, so the artisan table only gains above 40 m. As
+in vanilla, removing and repairing pieces use the same range, measured horizontally from where you stand. Changes
+apply within two seconds. Any bonus from station upgrades, the station's own area effect, crafting distance and
+upgrade rules stay vanilla.
 
 Side: Client. Only the player who builds needs the mod; other players and the server don't.
 

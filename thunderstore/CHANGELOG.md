@@ -12,7 +12,7 @@
 - Station extension range: extensions upgrade stations from up to `ExtensionRangeMeters` away (default 10 m; vanilla 2-5 m depending on the extension, never shrunk) and can be placed that far.
 
 - Comfort range: comfort pieces count from up to `ComfortRangeMeters` away (default 20 m, max 64 m, vanilla 10 m); resting still needs a burning fire nearby.
-- Larger crafting station build range: config is now `StationBuildRangeMeters` (default 40 m) instead of a multiplier; the old `StationBuildRangeMultiplier` key is ignored.
+- Larger crafting station build range: config is now `StationBuildRangeMeters` (default 40 m, max 64 m, never below a station's vanilla range: 20 m, artisan table 40 m) instead of a multiplier; the old `StationBuildRangeMultiplier` key is ignored. At the default the artisan table keeps its vanilla 40 m (0.0.10 doubled it to 80 m).
 
 ## 0.0.10
 
