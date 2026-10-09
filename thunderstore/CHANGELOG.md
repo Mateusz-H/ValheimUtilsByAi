@@ -5,6 +5,8 @@
 - Fix: faster loot from dead creatures no longer makes player corpses and bosses vanish early; both keep the vanilla timing.
 - Fix: switch Forsaken power anywhere only offers powers whose boss has been killed in the current world, so a character from another world or server no longer gets every power it picked there.
 - Fix: auto repair at crafting stations repairs all worn items at once with a single sound, instead of piling up one sound per item.
+- Fix: auto map sync no longer deletes the pins of players who are offline (after a server restart, a new character or `resetsharedmap`). The server now merges everyone's map instead of passing on the last upload, new players get the whole shared map when they join, and only a pin's owner can remove it for everyone. **Update the server too**; players on older versions keep syncing with an updated server.
+- Fix: auto map sync sends your map only after you explored something or changed your own pins, instead of re-sending everything others shared, so it uses far less network and CPU. It no longer turns hidden pin types back on, no longer leaks one world's map into another world on a listen server, and skips worlds without a map and servers without the mod.
 
 - Farm everything: uproot wild berry bushes, mushrooms, thistle, dandelion and fiddlehead with the Cultivator for seeds and plant them on cultivated ground; planted ones regrow in `FarmEverything<Prefab>Minutes` (default 1.5x wild).
 - Plant growth timer: hovering a sapling or a bare planted bush shows how long until it grows.

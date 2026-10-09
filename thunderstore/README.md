@@ -81,14 +81,21 @@ links are kept.
 
 ### Auto map sync (`[World] AutoMapSync`, default: on)
 
-All players share one map without building a cartography table. Your explored areas and pins are sent to the
-server 30 seconds after you join and then every 5 minutes (only when something changed); the server passes them
-on to everyone else, and new players get the shared map when they join. Merging works exactly like reading a
-vanilla cartography table: shared areas show as "explored by others", death markers are not shared, and the
-table itself still works by hand.
+All players share one map without building a cartography table. When you join, your explored areas and pins are
+sent to the server, which merges them into one shared map and sends you everything the others have found. After that
+your map is sent at most every 5 minutes, and only when you explored something new or added, removed or ticked off one
+of your own pins; the server passes whatever is new on to everyone else.
 
-Side: Both. The server and every player who wants the shared map need the mod. The server keeps the map only in
-memory; after a restart it is rebuilt from the players' next uploads.
+The shared map works like one cartography table that everybody writes to: shared areas show as "explored by others",
+death markers are not shared, and a real table still works by hand. A pin belongs to the player who placed it, and
+only they can remove it for everyone. If you delete another player's pin it comes back with the next sync, ticking a
+pin off is not passed on to players who already have it, and `resetsharedmap` is refilled by the next sync. Syncing
+never shows pin types you have hidden, and nothing is synced in worlds without a map.
+
+Side: Both. The server and every player who wants the shared map need the mod; update the server together with the
+players (an older server still passes on single maps, which can remove other players' pins). The server keeps the
+shared map only in memory: after a restart it is rebuilt as players join, because each player's own map still holds
+everything that was shared before.
 
 ### Feeding trough (`[World] FeedingTrough`, default: on)
 
