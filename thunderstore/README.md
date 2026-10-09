@@ -187,11 +187,12 @@ server every portal in the world is listed. Other players without the mod keep v
 
 ### Farm everything (`[World] FarmEverything`, default: on)
 
-Wild raspberry, blueberry and cloudberry bushes, the three mushrooms, thistle and dandelion can be taken home.
+Wild raspberry, blueberry, cloudberry and lingonberry bushes, the four mushrooms (incl. Ashlands smoke puffs), thistle,
+dandelion and Ashlands fiddlehead can be taken home. Magecap and Jotun puffs stay vanilla (already farmable).
 With the Cultivator out, look at one and press the Remove button (middle mouse, hammer "remove" bind): the plant is
 uprooted and drops one seed item (for example **Raspberries seeds**, with the berry icon; not edible). Each seed is a
 new Cultivator piece (**Raspberries plant**, ...), placed on cultivated ground like any sapling. A planted one starts
-bare and grows its harvest after `[World] FarmEverything<Prefab>Minutes` (defaults: 450 for berry bushes, 360 for
+bare and grows its harvest after `[World] FarmEverything<Prefab>Minutes` (defaults: 450 for berry bushes and fiddlehead, 360 for
 mushrooms, thistle and dandelion, i.e. 1.5x the wild 300 / 240), then regrows at that pace after every pick. The
 harvest itself is vanilla. Uproot a planted one with the Cultivator to get its seed back (hammer remove refunds it too).
 Wild plants and their respawn are untouched unless you uproot them.

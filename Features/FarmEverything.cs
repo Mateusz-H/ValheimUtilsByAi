@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace ValheimUtilsByAi.Features;
 
-// Wild berry bushes, mushrooms, thistle and dandelions can be uprooted with the Cultivator (the Remove button, middle
+// Wild berry bushes, mushrooms, thistle, dandelions and fiddlehead ferns can be uprooted with the Cultivator (the Remove button, middle
 // mouse). Each drops a seed item: a clone of the plant's own produce with the food stats removed. The seed pays for a
 // Cultivator piece cloned from the wild plant. It is placed bare and grows its first harvest after a configurable
 // number of minutes (default 1.5x the wild respawn), then keeps regrowing at that pace.
@@ -16,9 +16,9 @@ internal static class FarmEverything
 {
     private static readonly string[] WildPlants =
     {
-        "RaspberryBush", "BlueberryBush", "CloudberryBush",
-        "Pickable_Mushroom", "Pickable_Mushroom_yellow", "Pickable_Mushroom_blue",
-        "Pickable_Thistle", "Pickable_Dandelion",
+        "RaspberryBush", "BlueberryBush", "CloudberryBush", "LingonberryBush",
+        "Pickable_Mushroom", "Pickable_Mushroom_yellow", "Pickable_Mushroom_blue", "Pickable_SmokePuff",
+        "Pickable_Thistle", "Pickable_Dandelion", "Pickable_Fiddlehead",
     };
 
     private sealed class Plant
@@ -47,7 +47,7 @@ internal static class FarmEverything
             "World",
             "FarmEverything",
             true,
-            "Uproot wild berry bushes, mushrooms, thistle and dandelions with the Cultivator (Remove button) to get " +
+            "Uproot wild berry bushes, mushrooms, thistle, dandelions and fiddlehead with the Cultivator (Remove button) to get " +
             "seeds, and plant them on cultivated ground with the Cultivator. Planted ones regrow slower than wild " +
             "ones; minutes per plant are set below. Off: no uprooting, pieces hidden; planted ones keep growing.");
         _enabled.SettingChanged += (_, _) =>
