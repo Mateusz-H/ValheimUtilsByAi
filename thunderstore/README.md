@@ -35,47 +35,68 @@ Side: Client. Only players running the mod are restricted; a player without it c
 
 ### Auto storage (`[Crafting] AutoStorage`, default: on)
 
-Adds **AutoStorage Link** to the vanilla Hammer's Misc tab: a tool like the Hammer's Repair entry. Free, nothing
-is placed.
+Adds **AutoStorage Link input** and **AutoStorage Link output** to the vanilla Hammer's Misc tab (copper ore and copper
+bar icons): tools like the Hammer's Repair entry. Free, nothing is placed.
 
-Select AutoStorage Link in the Hammer menu and left-click a processing piece, then left-click any chest built by a player
-(wood chest, reinforced chest, black metal chest, ...; not carts, ships or tombstones) to link them. Linked pieces take their inputs from that chest and put their products into it, with no pickup
+Pick one in the Hammer menu, left-click a processing piece, then left-click any chest built by a player (wood chest,
+reinforced chest, black metal chest, ...; not carts, ships or tombstones). With **Link input** the piece takes its
+inputs from that chest; with **Link output** it puts its products into it. A piece can have several input and output
+chests, used in the order you linked them, and one chest can be both its input and its output. There is no pickup
 radius or area: you choose every connection. Click the same piece and chest again to unlink; click a chest with
-nothing selected to unlink every piece connected to it. While AutoStorage Link is selected, green lines show
-existing links and a yellow line follows the selected piece. Pick any other Hammer entry to build again.
+nothing selected to unlink it from every piece that uses it as input (or as output, with Link output). While a link
+tool is selected, lines show the existing links of its kind (blue for inputs, green for outputs) and a yellow line
+follows the selected piece. Pick any other Hammer entry to build again.
 
-The separate AutoStorage Hammer from earlier versions is gone: any copy in your inventory turns into its materials
-(3 Wood, 1 Surtling Core) when you log in or pick it up.
+You can only link or unlink a chest you could open: a private chest only its builder, a chest inside a ward only
+players the ward lets in. A piece inside a ward can only be selected by players the ward lets in.
 
-| Piece | Takes from chest | Puts into chest |
+A piece with only input chests still drops or keeps its products as in vanilla, and one with only output chests still
+needs its inputs added by hand. A chest linked as both input and output also feeds a piece its own products: a
+windmill then turns oat seeds into oats and those oats into oat flour. Use separate input and output chests to keep
+the oats.
+
+| Piece | Takes from input chests | Puts into output chests |
 | --- | --- | --- |
 | Charcoal kiln | wood (respects the kiln wood filter) | coal |
 | Smelter, blast furnace, eitr refinery | ore / scrap / soft tissue, coal or sap | bars, eitr |
-| Spinning wheel, windmill | flax, barley | linen thread, barley flour |
-| Beehive, sap extractor | - | honey, sap |
+| Spinning wheel | flax | linen thread |
+| Windmill | barley, oat seeds, oats | barley flour, oats, oat flour |
+| Frigid kiln | ice | liquid frost |
+| Hot tub | wood | - |
+| Beehive, birds' nest, sap extractor | - | honey, feathers, sap |
 | Cooking station, iron cooking station, stone oven | raw food, wood for the oven | cooked (or burnt) food |
+| Frost foundry | casts, liquid frost | the finished weapons, armor and staffs |
 | Fermenter | base mead | mead |
 
 Vanilla rules stay: fire, fuel, roof, cover and biome requirements are untouched (Craft without roof lifts roof
-and cover), the chest must have room or the product drops on the ground as usual, and nothing moves while a player
-has the chest open.
+and cover), and nothing moves while a player has the chest open. When no output chest has room, the kilns, smelters,
+furnaces, refinery, spinning wheel and windmill drop their products on the ground as usual; a beehive, birds' nest or
+sap extractor keeps filling up to its limit, a fermenter keeps its mead, and a cooking station leaves the food on the
+station, where it burns as in vanilla. Food that AutoStorage takes off a cooking station gives no cooking skill and no
+bonus portions, since no player picks it up, and frost foundry gear gets no crafter name.
 `[Crafting] AutoStorageMaxLinkDistance` (default 100 m) caps the link length. Pieces are only simulated near a
 player, so a chest more than roughly 64 m from its piece may not be loaded and the piece then idles.
 
-Products that still landed on the ground (chest full, open or not loaded at that moment) are picked up later: once a
-minute each linked piece moves its own products lying within `[Crafting] AutoStorageCollectRadius` (default 5 m,
-0 turns it off) into its chest. Only that piece's products are taken, never other items or food placed on tables.
-A drop is only taken by the game that owns it, exactly like a vanilla pickup, and leaves the ground only as far as
-it went into the chest, so nothing is duplicated or lost.
+Products that still landed on the ground (output chests full, open or not loaded at that moment) are picked up later:
+once a minute each piece with an output chest moves items of the kinds it makes lying within
+`[Crafting] AutoStorageCollectRadius` (default 5 m, 0 turns it off) into its output chests. Items are matched by kind,
+not by where they came from: a cooking station, which makes coal from burnt food, also takes coal from a nearby kiln.
+Items placed as decoration, such as food on tables, are never taken. A drop is only taken by the game that owns it,
+exactly like a vanilla pickup, and leaves the ground only as far as it went into a chest, so nothing is duplicated or
+lost.
 
 In multiplayer only the game that owns a chest edits it. A linked piece asks the chest's owner to hand it over and
-waits until it does; the owner hands it over only while nobody has the chest open, so two players never write to
-the same chest at once.
+waits until it does; the owner hands it over only while nobody has the chest open or is crafting from it, so two
+players never write to the same chest at once. The game that controls a piece (in multiplayer usually the first player
+who came near it) runs its automation with its own settings.
 
-The custom AutoStorage chest from earlier versions is removed. **Empty your AutoStorage chests before updating:**
-placed ones disappear from the world, along with their contents.
+Links made with the single AutoStorage Link tool of 0.0.10 and earlier are removed: link those pieces again with Link
+input and Link output. The separate AutoStorage Hammer from earlier versions is gone: any copy in your inventory turns
+into its materials (3 Wood, 1 Surtling Core) when you log in or pick it up. The custom AutoStorage chest from earlier
+versions is removed. **Empty your AutoStorage chests before updating:** placed ones disappear from the world, along
+with their contents.
 
-Side: Both. The mod (and Jötunn) must be installed on the server and on every client, otherwise the Link tool does
+Side: Both. The mod (and Jötunn) must be installed on the server and on every client, otherwise the link tools do
 not exist for them and their chests are never handed over. Turning the feature off stops linking and automation;
 links are kept.
 

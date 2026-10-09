@@ -87,8 +87,9 @@ internal static class CraftFromContainers
         }
     }
 
-    // Vanilla Container.CheckAccess: public chests for everyone, private ones for their builder.
-    private static bool HasAccess(Container chest, long playerID) => chest.m_privacy switch
+    // Vanilla Container.CheckAccess: public chests for everyone, private ones for their builder. AutoStorage's link
+    // tools use it too.
+    internal static bool HasAccess(Container chest, long playerID) => chest.m_privacy switch
     {
         Container.PrivacySetting.Public => true,
         Container.PrivacySetting.Private => chest.GetComponent<Piece>().GetCreator() == playerID,
