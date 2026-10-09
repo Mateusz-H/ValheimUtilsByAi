@@ -310,6 +310,16 @@ the limit, as in vanilla.
 Side: Both. Breeding is decided by whoever owns the animal, usually the game of the nearest player, so install it on
 the server and on the client of every player who keeps animals.
 
+### Auto-opening doors (`[Building] AutoDoors`, default: on)
+
+Doors and gates built by players open by themselves when you come within 2.5 m, swinging away from you, and close
+again once nobody is within 4 m. A door you close by hand while standing next to it stays closed until you walk away.
+Doors the game generated (dungeons, crypts, Fuling villages and other locations), doors that need a key and doors
+inside someone else's ward stay vanilla and still need E.
+
+Side: Client. Opening uses the same request as pressing E, so other players see the doors move without having the
+mod, and the server doesn't need it.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires

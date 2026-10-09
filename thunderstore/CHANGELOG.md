@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Auto-opening doors: player-built doors and gates open as you walk up and close behind you; dungeon doors stay manual.
+
 - Craft and build from nearby containers: a craft now takes its materials out of the chests the moment you click Craft and puts back what is left if you cancel, so other players can open those chests during your craft instead of getting "Someone else is using this".
 
 - Fix: AutoStorage no longer loses items (honey, bars, coal, ...) when a player opens an output chest right after a piece put something into it.
