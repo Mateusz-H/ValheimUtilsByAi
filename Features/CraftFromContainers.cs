@@ -20,8 +20,12 @@ namespace ValheimUtilsByAi.Features;
 // Ownership is asked for only on an action (the Craft click, selecting a build piece, a place click that falls short)
 // and only for chests holding one of its materials. The request is vanilla's RPC_RequestOpen with the chest UI
 // suppressed, so owners without the mod hand chests over too, under vanilla's rules: not while open, private chests
-// only to their builder. An owner with the mod also refuses while its own craft is running and the chest holds one of
-// that recipe's materials, so a hand-over never breaks a craft in progress.
+// only to their builder.
+//
+// A craft takes what the inventory lacks out of the chests on the Craft click (from the others as soon as they arrive)
+// and holds it until vanilla consumes at the end of the craft timer, so no chest stays locked for the length of the
+// craft. Whatever is left when the craft ends or is cancelled goes back to its chest, else the inventory, else the
+// ground.
 //
 // Recipes that need only one of their ingredients are left vanilla: their consume path bypasses ConsumeResources.
 internal static class CraftFromContainers
@@ -39,7 +43,8 @@ internal static class CraftFromContainers
             "CraftFromContainers",
             true,
             "Crafting, upgrading and building also use materials from chests near you, after your own inventory. " +
-            "In multiplayer a chest another player has open or is crafting from is skipped until they finish; " +
+            "A craft takes its materials out of the chests when you click Craft and puts back what is left if " +
+            "you cancel. In multiplayer a chest another player has open is skipped until they close it; " +
             "you get a short message and can try again.");
         _radius = config.Bind(
             "Crafting",
@@ -58,6 +63,10 @@ internal static class CraftFromContainers
         AccessTools.FieldRefAccess<InventoryGui, float>("m_craftTimer");
     private static readonly AccessTools.FieldRef<InventoryGui, Recipe> CraftRecipe =
         AccessTools.FieldRefAccess<InventoryGui, Recipe>("m_craftRecipe");
+    private static readonly AccessTools.FieldRef<InventoryGui, ItemDrop.ItemData?> CraftUpgradeItem =
+        AccessTools.FieldRefAccess<InventoryGui, ItemDrop.ItemData?>("m_craftUpgradeItem");
+    private static readonly AccessTools.FieldRef<InventoryGui, bool> MultiCrafting =
+        AccessTools.FieldRefAccess<InventoryGui, bool>("m_multiCrafting");
     // m_selectedRecipe is a private struct type, so its Recipe is read by reflection.
     private static readonly FieldInfo SelectedRecipeField = AccessTools.Field(typeof(InventoryGui), "m_selectedRecipe");
     private static readonly MethodInfo SelectedRecipeGetter = AccessTools.PropertyGetter(SelectedRecipeField.FieldType, "Recipe");
@@ -170,6 +179,7 @@ internal static class CraftFromContainers
             if (_countScope == 0 || name == null) return;
             var player = Player.m_localPlayer;
             if (!Active(player) || __instance != player.GetInventory()) return;
+            __result += CountHeld(name, quality, matchWorldLevel);
             var countNotOwned = _uiDepth > 0;
             foreach (var chest in ChestsInRange())
             {
@@ -298,7 +308,13 @@ internal static class CraftFromContainers
     private static class CraftFromOwnedChestsOnly
     {
         private static void Prefix(out int __state) => __state = BeginOwnedOnly(ChestBusyMessage);
-        private static void Finalizer(int __state) => EndOwnedOnly(__state);
+
+        // Runs however DoCrafting ended: what the craft didn't use goes back.
+        private static void Finalizer(int __state)
+        {
+            EndOwnedOnly(__state);
+            ReturnHeld();
+        }
     }
 
     [HarmonyPatch(typeof(Player), "UpdatePlacement")]
@@ -313,8 +329,8 @@ internal static class CraftFromContainers
         private static void Finalizer(int __state) => EndOwnedOnly(__state);
     }
 
-    // The craft failed only because chests this peer doesn't own hold the rest: their owner is crafting from them, or
-    // the hand-over hasn't arrived. Vanilla fails silently here and takes nothing.
+    // The craft failed only because chests this peer doesn't own hold the rest: the hand-over hasn't arrived, or
+    // another game took them back. Vanilla fails silently here and takes nothing.
     [HarmonyPatch(typeof(Player), nameof(Player.HaveRequirements), typeof(Recipe), typeof(bool), typeof(int), typeof(int))]
     private static class ExplainBusyChestOnCraft
     {
@@ -359,17 +375,6 @@ internal static class CraftFromContainers
         }
     }
 
-    // The craft timer (0.8-2 s, longer for multi-craft and upgrades) normally covers the hand-over.
-    [HarmonyPatch(typeof(InventoryGui), "OnCraftPressed")]
-    private static class RequestChestsForCraft
-    {
-        private static void Postfix(InventoryGui __instance)
-        {
-            var recipe = CraftRecipe(__instance);
-            if (CraftTimer(__instance) >= 0f && recipe != null) RequestChestsHolding(recipe.m_resources);
-        }
-    }
-
     private static Piece? _requestedForPiece;
 
     // Selecting a build piece, or taking out the tool, asks for its chests so the first click normally works.
@@ -395,58 +400,181 @@ internal static class CraftFromContainers
         private static void Prefix(Container __instance) => RequestedByUs.Remove(__instance);
     }
 
-    // ---------------------------------------------------------------- owner side
+    // ---------------------------------------------------------------- holding a running craft's materials
 
-    // True while the local player's craft is running and this chest, in range, holds one of that recipe's materials:
-    // handing it over now would fail the craft when its timer ends. AutoStorage asks for chests with its own RPC and
-    // should refuse in this case too.
-    internal static bool IsCraftingFrom(Container chest)
+    // A class, not a tuple: the game's runtime has no System.ValueTuple.
+    private sealed class HeldItem
     {
-        var gui = InventoryGui.instance;
-        if (!Active(Player.m_localPlayer) || gui == null || CraftTimer(gui) < 0f) return false;
-        var recipe = CraftRecipe(gui);
-        return recipe != null && ChestsInRange().Contains(chest) && HoldsAny(chest.GetInventory(), recipe.m_resources);
+        public readonly Container Chest;
+        public readonly ItemDrop.ItemData Item;
+        public HeldItem(Container chest, ItemDrop.ItemData item) { Chest = chest; Item = item; }
     }
 
-    // Vanilla already refuses while the chest is open. uid is the asking peer; asking ourselves stays vanilla.
-    [HarmonyPatch(typeof(Container), "RPC_RequestOpen")]
-    private static class KeepChestWhileCrafting
+    // Taken out of chests on the Craft click, with the chest each came from; in no inventory until DoCrafting consumes
+    // them. Counted as the player's own by the requirement checks. Lost only if the game crashes during the craft.
+    private static readonly List<HeldItem> Held = new();
+    // What the running craft still lacks, by item name, until chests this peer doesn't own yet arrive; null while no
+    // craft holds anything.
+    private static Dictionary<string, int>? _stillMissing;
+
+    // What the inventory lacks for these requirements, by item name, with the filters vanilla ConsumeResources uses:
+    // at a station only its upgrader (or non-upgrader) resources, elsewhere no upgrader resources. Null when nothing.
+    private static Dictionary<string, int>? Missing(Player player, Piece.Requirement[] requirements, int qualityLevel,
+        int itemQuality, int multiplier)
     {
-        private static bool Prefix(Container __instance, long uid)
+        Dictionary<string, int>? missing = null;
+        var station = player.GetCurrentCraftingStation();
+        var inventory = player.GetInventory();
+        foreach (var requirement in requirements)
         {
-            var view = ContainerView(__instance);
-            if (uid == ZNet.GetUID() || !view.IsValid() || !view.IsOwner() || !IsCraftingFrom(__instance)) return true;
-            view.InvokeRPC(uid, "RPC_OpenResponse", false);
-            return false;
+            if (station != null && station.m_upgrader != requirement.m_upgraderResource) continue;
+            if (station == null && requirement.m_upgraderResource) continue;
+            if (!requirement.m_resItem) continue;
+            var name = requirement.m_resItem.m_itemData.m_shared.m_name;
+            var lacking = requirement.GetAmount(qualityLevel) * multiplier - inventory.CountItems(name, itemQuality);
+            if (lacking <= 0) continue;
+            missing ??= new Dictionary<string, int>();
+            missing.TryGetValue(name, out var earlier);
+            missing[name] = earlier + lacking;
         }
+        return missing;
+    }
+
+    private static bool StillMissing(Piece.Requirement requirement) =>
+        _stillMissing != null && requirement.m_resItem && _stillMissing.ContainsKey(requirement.m_resItem.m_itemData.m_shared.m_name);
+
+    // Inventory.CountItems' filters over the held items.
+    private static bool Matches(ItemDrop.ItemData item, string name, int quality, bool matchWorldLevel) =>
+        item.m_shared.m_name == name && (quality < 0 || item.m_quality == quality) &&
+        (!matchWorldLevel || item.m_worldLevel >= Game.m_worldLevel);
+
+    private static int CountHeld(string name, int quality, bool matchWorldLevel)
+    {
+        var count = 0;
+        foreach (var held in Held) if (Matches(held.Item, name, quality, matchWorldLevel)) count += held.Item.m_stack;
+        return count;
+    }
+
+    // Moves what the craft still lacks out of the chests this peer owns, in range order.
+    private static void HoldFromOwnedChests()
+    {
+        if (_stillMissing == null) return;
+        foreach (var name in new List<string>(_stillMissing.Keys))
+        {
+            var missing = _stillMissing[name];
+            foreach (var chest in ChestsInRange())
+            {
+                if (missing <= 0) break;
+                if (!IsOwned(chest)) continue;
+                var inventory = LoadedInventory(chest);
+                foreach (var item in new List<ItemDrop.ItemData>(inventory.GetAllItems()))
+                {
+                    if (missing <= 0) break;
+                    if (!Matches(item, name, -1, matchWorldLevel: true)) continue;
+                    var take = Mathf.Min(missing, item.m_stack);
+                    var taken = item.Clone();
+                    taken.m_stack = take;
+                    if (!inventory.RemoveItem(item, take)) continue;
+                    Held.Add(new HeldItem(chest, taken));
+                    missing -= take;
+                }
+            }
+            if (missing > 0) _stillMissing[name] = missing;
+            else _stillMissing.Remove(name);
+        }
+    }
+
+    // Each held item goes back to its chest if this peer still owns it and it has room, else to the inventory, else
+    // to the ground. The chest comes first on shutdown too: if the take hadn't reached the server yet, a return to the
+    // inventory would leave the materials in both places; a chest return can at worst be lost, never doubled.
+    private static void ReturnHeld()
+    {
+        _stillMissing = null;
+        if (Held.Count == 0) return;
+        var player = Player.m_localPlayer;
+        // A client that lost the server can't tell whether the take reached it. The chest only: anywhere else the
+        // materials could exist twice, in the server's chest and in the saved inventory or a drop.
+        var offline = ZNet.instance != null && !ZNet.instance.IsServer() && ZNet.instance.GetServerPeer() == null;
+        foreach (var held in Held)
+        {
+            var chest = held.Chest;
+            var item = held.Item;
+            if (IntoChest(chest, item)) continue;
+            if (offline)
+            {
+                Plugin.Log.LogWarning($"CraftFromContainers: {item.m_stack} x {item.m_shared.m_name} could not be returned while disconnected");
+                continue;
+            }
+            if (player != null && player.GetInventory().CanAddItem(item) && player.GetInventory().AddItem(item)) continue;
+            var position = player != null ? player.transform.position + Vector3.up : chest != null ? chest.transform.position + Vector3.up : (Vector3?)null;
+            if (position == null) { Plugin.Log.LogWarning($"CraftFromContainers: {item.m_stack} x {item.m_shared.m_name} could not be returned"); continue; }
+            ItemDrop.DropItem(item, item.m_stack, position.Value, Quaternion.identity);
+        }
+        Held.Clear();
+    }
+
+    private static bool IntoChest(Container chest, ItemDrop.ItemData item)
+    {
+        if (chest == null) return false;
+        var view = ContainerView(chest);
+        if (view == null || !view.IsValid() || !view.IsOwner()) return false;
+        var inventory = LoadedInventory(chest);
+        return inventory.CanAddItem(item) && inventory.AddItem(item);
+    }
+
+    // Vanilla starts the craft timer here and consumes at its end; the materials leave the chests now instead, so a
+    // chest is only busy for the hand-over, not for the whole craft. Not for one-ingredient recipes, which never use
+    // chests.
+    [HarmonyPatch(typeof(InventoryGui), "OnCraftPressed")]
+    private static class HoldOnCraftClick
+    {
+        private static void Postfix(InventoryGui __instance)
+        {
+            var recipe = CraftRecipe(__instance);
+            var player = Player.m_localPlayer;
+            if (CraftTimer(__instance) < 0f || recipe == null || recipe.m_requireOnlyOneIngredient || !Active(player)) return;
+            ReturnHeld();
+            if (ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoCraftCost)) return;
+            var upgrade = CraftUpgradeItem(__instance);
+            var quality = upgrade == null ? 1 : upgrade.m_quality + 1;
+            var multiplier = MultiCrafting(__instance) ? __instance.m_multiCraftAmount : 1;
+            _stillMissing = Missing(player, recipe.m_resources, quality, -1, multiplier) ?? new Dictionary<string, int>();
+            HoldFromOwnedChests();
+            // Only chests holding what is still missing: asking takes them from other players and linked pieces.
+            if (_stillMissing.Count > 0) RequestChestsHolding(Array.FindAll(recipe.m_resources, StillMissing));
+        }
+    }
+
+    // Takes from chests as they arrive, and returns everything once the craft timer stopped without DoCrafting:
+    // cancelled, the inventory closed, the player died or walked away.
+    [HarmonyPatch(typeof(InventoryGui), "Update")]
+    private static class FollowHeldCraft
+    {
+        private static void Postfix(InventoryGui __instance)
+        {
+            if (_stillMissing == null && Held.Count == 0) return;
+            if (CraftTimer(__instance) < 0f) ReturnHeld();
+            else if (_stillMissing is { Count: > 0 } && Active(Player.m_localPlayer)) HoldFromOwnedChests();
+        }
+    }
+
+    [HarmonyPatch(typeof(Game), "Shutdown")]
+    private static class ReturnHeldOnShutdown
+    {
+        private static void Prefix() => ReturnHeld();
     }
 
     // ---------------------------------------------------------------- consuming
 
     // The prefix measures what the inventory lacks with the same filters RemoveItem uses; vanilla then takes what
-    // the inventory has and the postfix takes the rest from owned chests. Same requirement filter as vanilla.
+    // the inventory has and the postfix takes the rest from the held materials, then from owned chests.
     [HarmonyPatch(typeof(Player), nameof(Player.ConsumeResources))]
     private static class TakeFromChests
     {
         private static void Prefix(Player __instance, Piece.Requirement[] requirements, int qualityLevel, int itemQuality,
             int multiplier, out Dictionary<string, int>? __state)
         {
-            __state = null;
-            if (!Active(__instance)) return;
-            var station = __instance.GetCurrentCraftingStation();
-            var inventory = __instance.GetInventory();
-            foreach (var requirement in requirements)
-            {
-                if (station != null && station.m_upgrader != requirement.m_upgraderResource) continue;
-                if (station == null && requirement.m_upgraderResource) continue;
-                if (!requirement.m_resItem) continue;
-                var name = requirement.m_resItem.m_itemData.m_shared.m_name;
-                var missing = requirement.GetAmount(qualityLevel) * multiplier - inventory.CountItems(name, itemQuality);
-                if (missing <= 0) continue;
-                __state ??= new Dictionary<string, int>();
-                __state.TryGetValue(name, out var earlier);
-                __state[name] = earlier + missing;
-            }
+            __state = Active(__instance) ? Missing(__instance, requirements, qualityLevel, itemQuality, multiplier) : null;
         }
 
         private static void Postfix(int itemQuality, Dictionary<string, int>? __state)
@@ -455,7 +583,7 @@ internal static class CraftFromContainers
             foreach (var pair in __state)
             {
                 var name = pair.Key;
-                var missing = pair.Value;
+                var missing = TakeHeld(name, itemQuality, pair.Value);
                 foreach (var chest in ChestsInRange())
                 {
                     if (missing <= 0) break;
@@ -471,5 +599,20 @@ internal static class CraftFromContainers
                 if (missing > 0) Plugin.Log.LogWarning($"CraftFromContainers: {missing} x {name} could not be taken from nearby chests");
             }
         }
+    }
+
+    // Consumes up to amount of the held materials with Inventory.RemoveItem's filters; returns what is still owed.
+    private static int TakeHeld(string name, int itemQuality, int amount)
+    {
+        for (var i = 0; i < Held.Count && amount > 0; i++)
+        {
+            var item = Held[i].Item;
+            if (!Matches(item, name, itemQuality, matchWorldLevel: true)) continue;
+            var take = Mathf.Min(amount, item.m_stack);
+            item.m_stack -= take;
+            amount -= take;
+        }
+        Held.RemoveAll(held => held.Item.m_stack <= 0);
+        return amount;
     }
 }

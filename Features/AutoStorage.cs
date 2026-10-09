@@ -160,14 +160,27 @@ internal static class AutoStorage
     }
 
     // Runs on the chest's owner, which hands the chest over only while nobody has it open, like vanilla
-    // Container.RPC_RequestOpen, and not while its own player is crafting from it. Only the owner hands over, so two
-    // peers never edit the chest at once.
+    // Container.RPC_RequestOpen. Only the owner hands over, so two peers never edit the chest at once.
     private static void RPC_RequestOwn(Container chest, long sender)
     {
         var view = ContainerView(chest);
-        if (!view.IsValid() || !view.IsOwner() || chest.IsInUse() || CraftFromContainers.IsCraftingFrom(chest)) return;
+        if (!view.IsValid() || !view.IsOwner() || chest.IsInUse()) return;
         ZDOMan.instance.ForceSendZDO(sender, view.GetZDO().m_uid);
         view.GetZDO().SetOwner(sender);
+    }
+
+    // A chest reloads its contents from the ZDO only once a second (Container.CheckForChanges) and never while open, so
+    // a player opening a chest that a linked piece filled in the last second saw it without those items, and their
+    // first move saved that view over them. Reloading right before it counts as open closes the gap. Only on the owner,
+    // whose own edits are always saved at once, so nothing unsaved is dropped. Not gated on the config: it only makes
+    // the chest show what it holds.
+    [HarmonyPatch(typeof(Container), nameof(Container.SetInUse))]
+    private static class FreshContentsOnOpen
+    {
+        private static void Prefix(Container __instance, bool inUse)
+        {
+            if (inUse && !__instance.IsInUse() && __instance.IsOwner()) ContainerLoad(__instance);
+        }
     }
 
     private static readonly Dictionary<Container, float> NextRequest = new();
@@ -629,7 +642,11 @@ internal static class AutoStorage
     {
         // In build mode the player has no hover object; the hammer's hovered piece is the one it highlights.
         var hoveredPiece = player.GetHoveringPiece();
-        if (hoveredPiece == null) return;
+        if (hoveredPiece == null)
+        {
+            player.Message(MessageHud.MessageType.Center, "Aim at a processing piece or chest within reach");
+            return;
+        }
         var hovered = hoveredPiece.gameObject;
 
         var chest = HoveredChest(hovered);
