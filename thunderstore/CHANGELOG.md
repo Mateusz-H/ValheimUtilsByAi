@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.12
+
 - Portal map travel: portal pins have their own icon, pulse slowly and are always drawn above other pins. Hiding a pin type in the map filter no longer hides them, and choosing a portal no longer turns a hidden filter back on.
 - Portal map travel: the portal and stone portal cost 1.5x the vanilla materials (30 fine wood, 15 greydwarf eyes, 3 surtling cores for the portal). Change it with `[World] PortalCostMultiplier`; 1 keeps vanilla prices.
 
