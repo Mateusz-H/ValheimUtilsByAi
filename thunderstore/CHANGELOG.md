@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Fix: portal map travel closes the map once you move more than 5 m from the portal, so you can no longer step into a portal, walk off and travel from anywhere later.
+
 ## 0.0.14
 
 - Fix: being pushed into a portal with the inventory or a crafting station open no longer locks the screen; the inventory closes and the map opens.

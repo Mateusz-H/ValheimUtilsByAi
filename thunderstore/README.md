@@ -241,7 +241,8 @@ level is computed on each client.
 ### Portal map travel (`[World] PortalMapTravel`, default: on)
 
 Stepping into any portal opens the large map with a portal pin for every portal in the world, named by its tag.
-Click a pin to travel there; close the map to stay. Portal tags and connections no longer matter, so a single portal
+Click a pin to travel there; close the map to stay. Moving more than 5 m away from the portal closes the map, so
+you travel only from the portal you stepped into. Portal tags and connections no longer matter, so a single portal
 per outpost is enough. Everything else stays vanilla: the same item restrictions (`$msg_noteleport`), the
 `NoPortals` / `NoBossPortals` world modifiers, the loading screen and the exit spot in front of the target portal.
 The map pins are temporary and never saved. They use their own portal icon, pulse gently, stay drawn above every

@@ -35,6 +35,7 @@ internal static class PortalMapTravel
     private static readonly Dictionary<Piece.Requirement, int> VanillaAmounts = new();
     private static Sprite? _pinIcon;
     private static float _exitDistance;
+    private static Vector3 _portalPosition;
     private static bool _allowAllItems;
     // True while the map was opened by a portal: only then a pin click travels.
     private static bool _choosing;
@@ -42,6 +43,10 @@ internal static class PortalMapTravel
     // Vanilla m_animate pulses at sin(t * 5) +-20 %; this one is slower and softer.
     private const float PulseSpeed = 2.5f;
     private const float PulseAmount = 0.15f;
+
+    // How far the player may get from the portal they stepped into while choosing; vanilla only teleports from inside
+    // the portal's trigger.
+    private const float ChooseRange = 5f;
 
     public static void Bind(ConfigFile config)
     {
@@ -170,6 +175,7 @@ internal static class PortalMapTravel
             if (player.IsTeleporting() || !PassesVanillaChecks(player, __instance.m_allowAllItems)) return false;
 
             _exitDistance = __instance.m_exitDistance;
+            _portalPosition = __instance.transform.position;
             _allowAllItems = __instance.m_allowAllItems;
             // Pins first: the map may already be open with viewing pins, and if it is not, the SetMapMode postfix
             // only adds viewing pins while not choosing.
@@ -207,6 +213,8 @@ internal static class PortalMapTravel
                 closestDistance = distance;
             }
             if (closest == null) return false;
+            // Also checked every frame (CancelWhenWalkedAway); here too in case the click lands in the same frame.
+            if (CloseIfWalkedAway(__instance, player)) return false;
 
             Quaternion rotation = Pins[closest];
             Vector3 target = closest.m_pos + rotation * Vector3.forward * _exitDistance + Vector3.up;
@@ -239,6 +247,27 @@ internal static class PortalMapTravel
                 if (pin.m_uiElement != null) pin.m_uiElement.SetAsLastSibling();
                 pin.m_NamePinData?.PinNameRectTransform?.SetAsLastSibling();
             }
+        }
+    }
+
+    // Keyboard movement keeps working while the map is open (only the gamepad is blocked), so without this a player
+    // could step into a portal, walk off or be knocked away, and travel from anywhere minutes later.
+    private static bool CloseIfWalkedAway(Minimap minimap, Player player)
+    {
+        if (Vector3.Distance(player.transform.position, _portalPosition) <= ChooseRange) return false;
+        minimap.SetMapMode(Minimap.MapMode.Small);
+        player.Message(MessageHud.MessageType.Center, "Too far from the portal");
+        return true;
+    }
+
+    [HarmonyPatch(typeof(Minimap), "Update")]
+    private static class CancelWhenWalkedAway
+    {
+        private static void Postfix(Minimap __instance)
+        {
+            Player player = Player.m_localPlayer;
+            if (!_choosing || player == null || __instance.m_mode != Minimap.MapMode.Large) return;
+            CloseIfWalkedAway(__instance, player);
         }
     }
 
