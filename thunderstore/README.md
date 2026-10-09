@@ -174,6 +174,17 @@ counts once per station, and extensions still need their vanilla spacing from ea
 Side: Client. Every player who wants the higher station level or the relaxed placement needs the mod; the station
 level is computed on each client.
 
+### Portal map travel (`[World] PortalMapTravel`, default: on)
+
+Stepping into any portal opens the large map with a portal pin for every portal in the world, named by its tag.
+Click a pin to travel there; close the map to stay. Portal tags and connections no longer matter, so a single portal
+per outpost is enough. Everything else stays vanilla: the same item restrictions (`$msg_noteleport`), the
+`NoPortals` / `NoBossPortals` world modifiers, the loading screen and the exit spot in front of the target portal.
+The map pins are temporary and never saved.
+
+Side: Both. The client part works alone but only shows portals your game has already seen; with the mod on the
+server every portal in the world is listed. Other players without the mod keep vanilla portals.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
