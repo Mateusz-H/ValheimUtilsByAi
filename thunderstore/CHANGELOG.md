@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Fix: portal map travel closes the map once you move more than 5 m from the portal, so you can no longer step into a portal, walk off and travel from anywhere later.
 - Fix: craft and build from nearby containers no longer loses the materials of a craft that is running when the connection to the server drops; they go into your inventory.
 - Fix: AutoStorage no longer sweeps items a player dropped on purpose next to a linked piece into its output chest.
 - Fix: AutoStorage links made on a piece another player's game runs (for example a smelter they stand next to) no longer silently disappear.
