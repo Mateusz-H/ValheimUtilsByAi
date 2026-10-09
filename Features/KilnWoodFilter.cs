@@ -13,6 +13,8 @@ internal static class KilnWoodFilter
 
     private static ConfigEntry<bool> _enabled = null!;
     private static ConfigEntry<string> _allowedWood = null!;
+    private static HashSet<string> _allowedNames = null!;
+    private static bool _allowedNamesChecked;
 
     public static void Bind(ConfigFile config)
     {
@@ -28,16 +30,41 @@ internal static class KilnWoodFilter
             "Wood",
             "Comma-separated item prefab names the kiln accepts when KilnWoodFilter is on. " +
             "Vanilla kiln wood: Wood, FineWood, RoundLog, Blackwood.");
+        ParseAllowedWood();
+        _allowedWood.SettingChanged += (_, _) => ParseAllowedWood();
     }
 
-    // Both the client-side pick (FindCookableItem/OnAddOre) and the owner-side check (RPC_AddOre) read
-    // m_conversion, so narrowing that list for the duration of the call covers every path.
+    private static void ParseAllowedWood()
+    {
+        _allowedNames = new HashSet<string>(
+            _allowedWood.Value.Split(',').Select(name => name.Trim()).Where(name => name.Length > 0),
+            StringComparer.OrdinalIgnoreCase);
+        _allowedNamesChecked = false;
+    }
+
+    // Kiln wood is only known from a loaded kiln, so each config value is checked on its first use.
+    private static void WarnAboutNonKilnWood(List<Smelter.ItemConversion> kilnConversions)
+    {
+        _allowedNamesChecked = true;
+        var kilnWood = kilnConversions
+            .Where(conversion => conversion.m_from != null)
+            .Select(conversion => conversion.m_from.gameObject.name)
+            .ToList();
+        var notKilnWood = _allowedNames.Where(name => !kilnWood.Contains(name, StringComparer.OrdinalIgnoreCase)).ToList();
+        if (notKilnWood.Count > 0)
+            Plugin.Log.LogWarning($"KilnAllowedWood: ignoring {string.Join(", ", notKilnWood)}; " +
+                                  $"the charcoal kiln only takes {string.Join(", ", kilnWood)}");
+    }
+
+    // Only this player's own adds are narrowed: OnAddOre (E key, hotbar, radial pick) and FindCookableItem (also
+    // AutoStorage's chest feed). RPC_AddOre on the kiln owner stays vanilla: the sender has already removed the item
+    // from their inventory, so refusing it there would delete it.
     [HarmonyPatch]
     private static class Patch
     {
         private static IEnumerable<MethodBase> TargetMethods()
         {
-            yield return AccessTools.Method(typeof(Smelter), "IsItemAllowed", new[] { typeof(string) });
+            yield return AccessTools.Method(typeof(Smelter), "OnAddOre");
             yield return AccessTools.Method(typeof(Smelter), "FindCookableItem");
         }
 
@@ -46,18 +73,16 @@ internal static class KilnWoodFilter
             __state = __instance.m_conversion;
             if (!_enabled.Value || __instance.m_name != KilnPieceName) return;
 
-            var allowed = _allowedWood.Value
-                .Split(',')
-                .Select(name => name.Trim())
-                .Where(name => name.Length > 0)
-                .ToArray();
+            if (!_allowedNamesChecked) WarnAboutNonKilnWood(__state);
             __instance.m_conversion = __state
-                .Where(conversion => conversion.m_from != null &&
-                                     allowed.Contains(conversion.m_from.gameObject.name, StringComparer.Ordinal))
+                .Where(conversion => conversion.m_from != null && _allowedNames.Contains(conversion.m_from.gameObject.name))
                 .ToList();
         }
 
-        private static void Postfix(Smelter __instance, List<Smelter.ItemConversion> __state) =>
-            __instance.m_conversion = __state;
+        // __state is null when an earlier prefix threw and this one never ran.
+        private static void Finalizer(Smelter __instance, List<Smelter.ItemConversion>? __state)
+        {
+            if (__state != null) __instance.m_conversion = __state;
+        }
     }
 }
