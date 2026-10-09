@@ -1,6 +1,7 @@
 ## Unreleased
 
 - Farm everything: uproot wild berry bushes, mushrooms, thistle, dandelion and fiddlehead with the Cultivator for seeds and plant them on cultivated ground; planted ones regrow in `FarmEverything<Prefab>Minutes` (default 1.5x wild).
+- Plant growth timer: hovering a sapling or a bare planted bush shows how long until it grows.
 
 - Portal map travel: stepping into a portal opens the map with every portal pinned; click one to travel there.
 

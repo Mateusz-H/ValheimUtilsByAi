@@ -200,6 +200,14 @@ Wild plants and their respawn are untouched unless you uproot them.
 Side: Both. The mod (and Jötunn) must be installed on the server and on every client: the seeds and planted pieces are
 new prefabs, and players without them see errors. Turning the feature off stops uprooting and hides the pieces from the
 Cultivator; already planted ones keep growing on their configured time.
+### Plant growth timer (`[World] PlantGrowthTimer`, default: on)
+
+Hovering a planted sapling (carrots, turnips, onions, barley, flax, trees, Mistlands mushrooms, ...) adds a line
+under the vanilla "( Healthy )" text: `grows in 1h 05m`. Planted bushes and mushrooms from Farm everything show
+`<name>` and the same line while they are bare (vanilla shows nothing there). Wild plants are untouched. The time is
+the real growth time of that exact plant, so it already includes the random part of the vanilla grow time.
+
+Side: Client. Only you see the text; other players do not need the mod.
 
 ## Install
 

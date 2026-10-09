@@ -29,6 +29,7 @@ public sealed class Plugin : BaseUnityPlugin
         ExtensionRange.Bind(Config);
         PortalMapTravel.Bind(Config);
         FarmEverything.Bind(Config);
+        PlantGrowthTimer.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }
