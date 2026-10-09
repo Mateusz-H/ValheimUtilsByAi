@@ -99,18 +99,25 @@ everything that was shared before.
 
 ### Feeding trough (`[World] FeedingTrough`, default: on)
 
-Adds the **Feeding Trough** (Hammer > Misc, workbench): 10 Wood, 2 Resin, a 10-slot chest. Put food in it and
-hungry tamed animals within `[World] FeedingTroughRange` (default 15 m) walk to it and eat one item at a time, just
-like food dropped on the ground. Each animal only takes what it eats in vanilla.
+Adds the **Feeding Trough** (Hammer > Storage, also under Furniture; workbench): 10 Wood, 2 Resin, a 10-slot chest.
+Put food in it and hungry tamed animals within `[World] FeedingTroughRange` (default 15 m, 1-50 m) walk to it and
+eat one item at a time, just like food dropped on the ground. Each animal only takes what it eats in vanilla. Big
+animals such as Lox and Moose use it too.
 
 Vanilla rules stay: animals only look for food when hungry, food lying on the ground nearby is still eaten first,
-and nothing is taken while a player has the trough open. Untamed animals ignore the trough, so it does not tame.
+and nothing is taken while a player has the trough open. Untamed animals ignore the trough, so it does not tame, and
+summoned creatures ignore it, so they don't eat the livestock's feed. An animal only eats once it has really reached
+the trough (not through a gate that closed on its way) and gives up after 30 s if it can't get there.
 The trough is only checked when the game's own food search runs (every 10 s per hungry tamed animal), without
 physics queries, so idle troughs and fed animals cost nothing.
 
+In multiplayer only the game that owns the trough takes food out of it. An animal controlled by another player's game
+waits at the trough and asks the owner to hand it over; the owner hands it over only while nobody has the trough
+open, so two players never change the trough at once.
+
 Side: Both. The mod (and Jötunn) must be installed on the server and on every client, otherwise the trough does
-not exist for them. Animals are simulated by a nearby player's game, so that player needs the mod for feeding to
-happen. Turning the feature off keeps the trough craftable but animals stop using it.
+not exist for them and is never handed over. Animals are simulated by a nearby player's game, so that player needs
+the mod for feeding to happen. Turning the feature off keeps the trough craftable but animals stop using it.
 
 ### Switch Forsaken power anywhere (`[Combat] ForsakenPowerAnywhere`, default: on)
 
