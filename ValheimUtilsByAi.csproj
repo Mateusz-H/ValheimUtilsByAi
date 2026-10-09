@@ -39,6 +39,10 @@
     <Reference Include="Splatform" HintPath="$(ValheimManaged)/Splatform.dll" Private="false" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="assets/portal-pin.png" LogicalName="portal-pin.png" />
+  </ItemGroup>
+
   <Target Name="FailIfGameAssembliesMissing" BeforeTargets="ResolveAssemblyReferences">
     <Error Condition="!Exists('$(ValheimManaged)/assembly_valheim.dll')"
            Text="assembly_valheim.dll not found in '$(ValheimManaged)'. Pass -p:ValheimManaged=&lt;path to Valheim_Data\Managed&gt;." />

@@ -237,12 +237,19 @@ Stepping into any portal opens the large map with a portal pin for every portal 
 Click a pin to travel there; close the map to stay. Portal tags and connections no longer matter, so a single portal
 per outpost is enough. Everything else stays vanilla: the same item restrictions (`$msg_noteleport`), the
 `NoPortals` / `NoBossPortals` world modifiers, the loading screen and the exit spot in front of the target portal.
-The map pins are temporary and never saved. Without a map (the `NoMap` world modifier or the `nomap` console
+The map pins are temporary and never saved. They use their own portal icon, pulse gently, stay drawn above every
+other pin and ignore the map's icon filter. Because one portal now reaches every other, the portal and the stone
+portal cost more: `[World] PortalCostMultiplier` (default: 1.5, range 0.1-10) multiplies every material, rounded up,
+so the portal takes 30 fine wood, 15 greydwarf eyes and 3 surtling cores. Set it to 1 for vanilla prices. The new price
+applies to portals built from then on; destroying a portal refunds the price at the time the world loaded, so a portal
+built before the change can refund more than it cost. Without a map (the `NoMap` world modifier or the `nomap` console
 command) portals keep their vanilla tag links. Pins can only be picked with a mouse: on a controller, stepping into a
 portal currently just opens a map you cannot pick from, so turn the feature off to keep vanilla portals.
 
 Side: Both. The client part works alone but only shows portals your game has already seen; with the mod on the
-server every portal in the world is listed. Other players without the mod keep vanilla portals.
+server every portal in the world is listed. Other players without the mod keep vanilla portals. The build price is
+checked by each player's own game, so every player pays the price from their own config, and players without the mod
+pay the vanilla price.
 
 ### Farm everything (`[World] FarmEverything`, default: on)
 
