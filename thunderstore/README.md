@@ -185,6 +185,21 @@ The map pins are temporary and never saved.
 Side: Both. The client part works alone but only shows portals your game has already seen; with the mod on the
 server every portal in the world is listed. Other players without the mod keep vanilla portals.
 
+### Farm everything (`[World] FarmEverything`, default: on)
+
+Wild raspberry, blueberry and cloudberry bushes, the three mushrooms, thistle and dandelion can be taken home.
+With the Cultivator out, look at one and press the Remove button (middle mouse, hammer "remove" bind): the plant is
+uprooted and drops one seed item (for example **Raspberries seeds**, with the berry icon; not edible). Each seed is a
+new Cultivator piece (**Raspberries plant**, ...), placed on cultivated ground like any sapling. A planted one starts
+bare and grows its harvest after `[World] FarmEverything<Prefab>Minutes` (defaults: 450 for berry bushes, 360 for
+mushrooms, thistle and dandelion, i.e. 1.5x the wild 300 / 240), then regrows at that pace after every pick. The
+harvest itself is vanilla. Uproot a planted one with the Cultivator to get its seed back (hammer remove refunds it too).
+Wild plants and their respawn are untouched unless you uproot them.
+
+Side: Both. The mod (and Jötunn) must be installed on the server and on every client: the seeds and planted pieces are
+new prefabs, and players without them see errors. Turning the feature off stops uprooting and hides the pieces from the
+Cultivator; already planted ones keep growing on their configured time.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
