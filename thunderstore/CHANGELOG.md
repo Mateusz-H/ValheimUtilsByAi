@@ -1,6 +1,7 @@
 ## Unreleased
 
-- Comfort range: comfort pieces count from 2x further away (configurable).
+- Comfort range: comfort pieces count from up to `ComfortRangeMeters` away (default 20 m, vanilla 10 m).
+- Larger crafting station build range: config is now `StationBuildRangeMeters` (default 40 m) instead of a multiplier; the old `StationBuildRangeMultiplier` key is ignored.
 
 ## 0.0.10
 

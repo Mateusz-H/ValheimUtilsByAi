@@ -8,7 +8,7 @@ namespace ValheimUtilsByAi.Features;
 internal static class ComfortRange
 {
     private static ConfigEntry<bool> _enabled = null!;
-    private static ConfigEntry<float> _multiplier = null!;
+    private static ConfigEntry<float> _rangeMeters = null!;
 
     public static void Bind(ConfigFile config)
     {
@@ -16,20 +16,20 @@ internal static class ComfortRange
             "Building",
             "ComfortRange",
             true,
-            "Multiplies how far from you beds, chairs, rugs, fires and other comfort pieces still count " +
-            "towards your comfort level, by ComfortRangeMultiplier.");
-        _multiplier = config.Bind(
+            "Beds, chairs, rugs, fires and other comfort pieces count towards your comfort level from up to " +
+            "ComfortRangeMeters away instead of the vanilla 10 m.");
+        _rangeMeters = config.Bind(
             "Building",
-            "ComfortRangeMultiplier",
-            2f,
+            "ComfortRangeMeters",
+            20f,
             new ConfigDescription(
-                "Comfort range multiplier. 1 is vanilla (10 m).",
-                new AcceptableValueRange<float>(1f, 10f)));
+                "How far from you, in meters, a comfort piece still counts. Vanilla is 10.",
+                new AcceptableValueRange<float>(1f, 100f)));
     }
 
     private static void Prefix(ref float radius)
     {
         if (!_enabled.Value) return;
-        radius *= _multiplier.Value;
+        radius = _rangeMeters.Value;
     }
 }

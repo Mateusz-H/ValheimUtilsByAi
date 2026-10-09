@@ -120,10 +120,10 @@ Side: Client. Other players and the server don't need the mod.
 
 ### Larger crafting station build range (`[Building] StationBuildRange`, default: on)
 
-You can build farther from a workbench, forge or any other crafting station: its build range, including the bonus
-from station upgrades, is multiplied by `[Building] StationBuildRangeMultiplier` (default 2, so a workbench reaches
-40 m instead of 20 m; 1 is vanilla, max 10). The circle shown around the station grows with it. Changes apply within
-two seconds. The station's own area effect, crafting distance and upgrade rules stay vanilla.
+You can build farther from a workbench, forge or any other crafting station: its build range is
+`[Building] StationBuildRangeMeters` (default 40 m; vanilla is 20 m, max 100). The circle shown around the station grows
+with it. Changes apply within two seconds. Any bonus from station upgrades, the station's own area effect, crafting
+distance and upgrade rules stay vanilla.
 
 Side: Client. Only the player who builds needs the mod; other players and the server don't.
 
@@ -158,9 +158,9 @@ Side: Both. Chests owned by a player without the mod are never handed over to yo
 
 ### Comfort range (`[Building] ComfortRange`, default: on)
 
-Beds, chairs, rugs, banners, fires and every other comfort piece count towards your comfort level from
-further away: `ComfortRangeMultiplier` times the vanilla 10 m (default 2, so 20 m). Which pieces stack,
-their comfort values and the shelter requirement stay vanilla.
+Beds, chairs, rugs, banners, fires and every other comfort piece count towards your comfort level from up to
+`[Building] ComfortRangeMeters` away (default 20 m; vanilla is 10 m, max 100). Which pieces stack, their comfort values
+and the shelter requirement stay vanilla.
 
 Side: Client. Only players with the mod get the longer range; the rested buff itself is unchanged for everyone else.
 
