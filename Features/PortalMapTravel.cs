@@ -176,6 +176,10 @@ internal static class PortalMapTravel
             ClearPins();
             AddPortalPins(__instance.GetComponent<ZNetView>()?.GetZDO());
             _choosing = true;
+            // Vanilla never opens the map over the inventory: the map ignores input while the inventory is visible
+            // and the inventory ignores input while the map is open, so neither could be closed. Hide cancels a
+            // running craft, as closing the inventory by hand does.
+            if (InventoryGui.IsVisible()) InventoryGui.instance.Hide();
             Minimap.instance.SetMapMode(Minimap.MapMode.Large);
             player.Message(MessageHud.MessageType.Center, "Click a portal on the map");
             return false;
