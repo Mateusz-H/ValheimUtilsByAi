@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Fix: craft and build from nearby containers no longer loses the materials of a craft that is running when the connection to the server drops; they go into your inventory.
+- Fix: AutoStorage no longer sweeps items a player dropped on purpose next to a linked piece into its output chest.
+- Fix: AutoStorage links made on a piece another player's game runs (for example a smelter they stand next to) no longer silently disappear.
+- Fix: auto-opening doors close behind you when you die, go through a portal or log out next to them, and when the feature is turned off.
+
 ## 0.0.14
 
 - Fix: being pushed into a portal with the inventory or a crafting station open no longer locks the screen; the inventory closes and the map opens.
