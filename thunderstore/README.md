@@ -281,6 +281,17 @@ the real growth time of that exact plant, so it already includes the random part
 
 Side: Client. Only you see the text; other players do not need the mod.
 
+### Carts and ships on map (`[World] VehiclesOnMap`, default: on)
+
+Every cart and ship in the world (raft, karve, longship, drakkar and modded ones) gets a small pin on the large map and
+the minimap, using the same icon as in the build menu. Pins follow the vehicle as it moves, disappear when it is
+destroyed, and ignore the map's icon filter. They are view-only: they are not saved to your map, can't be removed with
+right click and are not shared through map tables. Your own saved pins and the rest of the map stay vanilla.
+
+Side: Both. The server sends every cart and ship to all players so they are visible anywhere in the world. Without the
+mod on the server you only see vehicles you've been near this session, at the last place you saw them. Players without
+the mod see vanilla maps.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
