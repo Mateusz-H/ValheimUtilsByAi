@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BepInEx.Configuration;
 using HarmonyLib;
+using Jotunn.Managers;
 using Splatform;
 using UnityEngine;
 
@@ -11,17 +12,32 @@ namespace ValheimUtilsByAi.Features;
 // Instead of jumping to the tag-linked portal, the large map opens with a temporary pin per known portal; a left click
 // on a pin teleports exactly as vanilla does, closing the map cancels. Clients only know portal ZDOs the server sent
 // them, so on the server every portal is force-sent each time vanilla re-links portals (every 5 s, revision-gated).
+// Since any portal now reaches every other, building one costs more: the hammer's portal pieces get their vanilla
+// requirement amounts times PortalCostMultiplier, recomputed from the stored originals whenever either setting changes.
 internal static class PortalMapTravel
 {
     private static ConfigEntry<bool> _enabled = null!;
+    private static ConfigEntry<float> _costMultiplier = null!;
 
     private static readonly Func<Minimap, Vector3, Vector3> ScreenToWorldPoint =
         AccessTools.MethodDelegate<Func<Minimap, Vector3, Vector3>>(
             AccessTools.Method(typeof(Minimap), "ScreenToWorldPoint"));
 
+    // UnityEngine.ImageConversionModule is built against netstandard 2.1, which a net462 project cannot reference.
+    private static readonly Func<Texture2D, byte[], bool> LoadImage =
+        AccessTools.MethodDelegate<Func<Texture2D, byte[], bool>>(
+            AccessTools.Method(AccessTools.TypeByName("UnityEngine.ImageConversion"), "LoadImage",
+                new[] { typeof(Texture2D), typeof(byte[]) }));
+
     private static readonly Dictionary<Minimap.PinData, Quaternion> Pins = new();
+    private static readonly Dictionary<Piece.Requirement, int> VanillaAmounts = new();
+    private static Sprite? _pinIcon;
     private static float _exitDistance;
     private static bool _allowAllItems;
+
+    // Vanilla m_animate pulses at sin(t * 5) +-20 %; this one is slower and softer.
+    private const float PulseSpeed = 2.5f;
+    private const float PulseAmount = 0.15f;
 
     public static void Bind(ConfigFile config)
     {
@@ -31,6 +47,58 @@ internal static class PortalMapTravel
             true,
             "Stepping into a portal opens the map with a pin for every portal in the world. Click a pin to travel " +
             "there; close the map to stay. Portal tags no longer matter.");
+        _costMultiplier = config.Bind(
+            "World",
+            "PortalCostMultiplier",
+            1.5f,
+            new ConfigDescription(
+                "While PortalMapTravel is on, every material of the portal and stone portal costs this many times " +
+                "the vanilla amount, rounded up. 1 keeps vanilla prices.",
+                new AcceptableValueRange<float>(0.1f, 10f)));
+        _enabled.SettingChanged += (_, _) => ApplyCost();
+        _costMultiplier.SettingChanged += (_, _) => ApplyCost();
+        PrefabManager.OnVanillaPrefabsAvailable += FindPortalPieces;
+    }
+
+    private static void FindPortalPieces()
+    {
+        PrefabManager.OnVanillaPrefabsAvailable -= FindPortalPieces;
+        var pieces = PrefabManager.Instance.GetPrefab("Hammer")?.GetComponent<ItemDrop>()?.m_itemData.m_shared
+            .m_buildPieces?.m_pieces;
+        if (pieces == null)
+        {
+            Plugin.Log.LogWarning("PortalMapTravel: hammer piece table not found, portal cost unchanged");
+            return;
+        }
+        foreach (GameObject prefab in pieces)
+        {
+            if (prefab == null || prefab.GetComponent<TeleportWorld>() == null) continue;
+            foreach (var requirement in prefab.GetComponent<Piece>().m_resources)
+                VanillaAmounts[requirement] = requirement.m_amount;
+            Plugin.Log.LogInfo($"PortalMapTravel: cost multiplier applies to {prefab.name}");
+        }
+        ApplyCost();
+    }
+
+    // Prefab-only: placed portals copied their requirements when instantiated and refund those on destruction.
+    private static void ApplyCost()
+    {
+        float multiplier = _enabled.Value ? _costMultiplier.Value : 1f;
+        foreach (var entry in VanillaAmounts)
+            entry.Key.m_amount = Mathf.Max(1, Mathf.CeilToInt(entry.Value * multiplier));
+    }
+
+    private static Sprite? PinIcon()
+    {
+        if (_pinIcon != null) return _pinIcon;
+        using var stream = typeof(PortalMapTravel).Assembly.GetManifestResourceStream("portal-pin.png");
+        if (stream == null) return null;
+        var bytes = new byte[stream.Length];
+        stream.Read(bytes, 0, bytes.Length);
+        var texture = new Texture2D(2, 2) { wrapMode = TextureWrapMode.Clamp };
+        if (!LoadImage(texture, bytes)) return null;
+        _pinIcon = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+        return _pinIcon;
     }
 
     private static void ClearPins()
@@ -75,15 +143,20 @@ internal static class PortalMapTravel
             _exitDistance = __instance.m_exitDistance;
             _allowAllItems = __instance.m_allowAllItems;
             ZDO? source = __instance.GetComponent<ZNetView>()?.GetZDO();
+            // PinType.None, like vanilla location pins: the icon filter never hides it, and AddPin does not switch a
+            // hidden filter back on as it would for Icon4. It has no sprite of its own, so the portal icon is set here.
+            Sprite? icon = PinIcon();
             foreach (ZDO zdo in ZDOMan.instance.GetPortalList())
             {
                 if (zdo == source) continue;
                 string tag = zdo.GetString(ZDOVars.s_tag).RemoveRichTextTags();
                 string author = zdo.GetString(ZDOVars.s_tagauthor);
                 var pin = Minimap.instance.AddPin(
-                    zdo.GetPosition(), Minimap.PinType.Icon4, string.IsNullOrWhiteSpace(tag) ? "$piece_portal" : tag,
+                    zdo.GetPosition(), icon != null ? Minimap.PinType.None : Minimap.PinType.Icon4,
+                    string.IsNullOrWhiteSpace(tag) ? "$piece_portal" : tag,
                     save: false, isChecked: false,
                     author: string.IsNullOrEmpty(author) ? PlatformUserID.None : new PlatformUserID(author));
+                if (icon != null) pin.m_icon = icon;
                 Pins[pin] = zdo.GetRotation();
             }
             player.Message(MessageHud.MessageType.Center, "Click a portal on the map");
@@ -130,6 +203,38 @@ internal static class PortalMapTravel
     {
         private static bool Prefix(Minimap __instance) =>
             !_enabled.Value || (__instance.m_mode == Minimap.MapMode.Large && Pins.Count == 0);
+    }
+
+    // UpdatePins creates a pin's marker (and its name) as the last child only when it scrolls into view, so other pins
+    // can end up drawn over ours. Move ours back to the end, which UI draws last, after every rebuild.
+    [HarmonyPatch(typeof(Minimap), "UpdatePins")]
+    private static class DrawPortalPinsOnTop
+    {
+        private static void Postfix()
+        {
+            foreach (var pin in Pins.Keys)
+            {
+                if (pin.m_uiElement != null) pin.m_uiElement.SetAsLastSibling();
+                pin.m_NamePinData?.PinNameRectTransform?.SetAsLastSibling();
+            }
+        }
+    }
+
+    // UpdatePins only runs when something changed, so the pulse is driven from Update every frame.
+    [HarmonyPatch(typeof(Minimap), "Update")]
+    private static class PulsePortalPins
+    {
+        private static void Postfix(Minimap __instance)
+        {
+            if (Pins.Count == 0 || __instance.m_mode != Minimap.MapMode.Large) return;
+            float size = __instance.m_pinSizeLarge * (1f + Mathf.Sin(Time.time * PulseSpeed) * PulseAmount);
+            foreach (var pin in Pins.Keys)
+            {
+                if (pin.m_uiElement == null) continue;
+                pin.m_uiElement.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, size);
+                pin.m_uiElement.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, size);
+            }
+        }
     }
 
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.SetMapMode))]
