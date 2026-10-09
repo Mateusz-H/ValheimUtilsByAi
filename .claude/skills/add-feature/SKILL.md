@@ -55,6 +55,9 @@ bash scripts/smoke-test.sh
 
 Both must pass. The smoke test loads the DLL in the headless server; Harmony throws there if the patch target does not exist. Fix and rerun until green.
 
+Then run the `review-feature` skill on `<PascalName>`. The smoke test never touches UI or multiplayer, so this is the
+only check for soft-locks, interrupted flows and item loss. Fix what it confirms, rebuild, rerun the smoke test.
+
 ## 6. Hand over
 
 ```
