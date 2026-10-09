@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using BepInEx.Configuration;
 using HarmonyLib;
 using Jotunn.Configs;
@@ -26,14 +27,30 @@ internal static class FarmEverything
         public readonly GameObject Seed;
         public readonly Piece Piece;
         public readonly ConfigEntry<int> Minutes;
+        // Prefab child holding the whole model, shown shrunk while the harvest regrows. Null for berry bushes, which
+        // only hide their berries.
+        public readonly Transform? ModelShrunkWhileBare;
 
-        public Plant(GameObject seed, Piece piece, ConfigEntry<int> minutes)
+        public Plant(GameObject seed, Piece piece, ConfigEntry<int> minutes, Transform? modelShrunkWhileBare)
         {
             Seed = seed;
             Piece = piece;
             Minutes = minutes;
+            ModelShrunkWhileBare = modelShrunkWhileBare;
         }
     }
+
+    private const float BareModelScale = 0.4f;
+
+    private static readonly System.Action<Player> UpdateKnownRecipesList =
+        AccessTools.MethodDelegate<System.Action<Player>>(AccessTools.Method(typeof(Player), "UpdateKnownRecipesList"));
+    private static readonly System.Action<Player> UpdateAvailablePiecesList =
+        AccessTools.MethodDelegate<System.Action<Player>>(AccessTools.Method(typeof(Player), "UpdateAvailablePiecesList"));
+    private static readonly System.Func<Player, float> GetBuildStamina =
+        AccessTools.MethodDelegate<System.Func<Player, float>>(AccessTools.Method(typeof(Player), "GetBuildStamina"));
+    private static readonly System.Func<Player, ItemDrop.ItemData, float> GetPlaceDurability =
+        AccessTools.MethodDelegate<System.Func<Player, ItemDrop.ItemData, float>>(
+            AccessTools.Method(typeof(Player), "GetPlaceDurability"));
 
     // Keyed by prefab name, under both the wild plant and its planted clone.
     private static readonly Dictionary<string, Plant> Plants = new();
@@ -53,6 +70,10 @@ internal static class FarmEverything
         _enabled.SettingChanged += (_, _) =>
         {
             foreach (var plant in Plants.Values) plant.Piece.m_enabled = _enabled.Value;
+            // The Cultivator only re-reads m_enabled when its piece list refreshes, so refresh it now.
+            if (Player.m_localPlayer == null) return;
+            UpdateKnownRecipesList(Player.m_localPlayer);
+            UpdateAvailablePiecesList(Player.m_localPlayer);
         };
 
         PrefabManager.OnVanillaPrefabsAvailable += RegisterPrefabs;
@@ -90,14 +111,27 @@ internal static class FarmEverything
                 "World",
                 $"FarmEverything{wildName}Minutes",
                 wildMinutes > 0f ? Mathf.RoundToInt(wildMinutes * 1.5f) : 360,
-                $"Minutes until a planted {wildName} grows its harvest, after planting and after each pick. " +
-                $"Wild ones take {wildMinutes:0}.");
+                new ConfigDescription(
+                    $"Minutes until a planted {wildName} grows its harvest, after planting and after each pick. " +
+                    $"Wild ones take {wildMinutes:0}.",
+                    // At 0 vanilla never schedules the regrowth, and destroys a picked plant that hides nothing.
+                    new AcceptableValueRange<int>(1, 10000)));
 
             var planted = PrefabManager.Instance.CreateClonedPrefab("FarmEverything_" + wildName, wild);
             var pickable = planted.GetComponent<Pickable>();
             pickable.m_defaultPicked = true;
             pickable.m_respawnTimeInitMin = pickable.m_respawnTimeInitMax = 0f;
             pickable.m_respawnTimeMinutes = minutes.Value;
+            // Mushrooms, thistle, dandelion and fiddlehead hide their whole model, colliders included, while picked, so a
+            // bare planted one would be invisible and impossible to hover or uproot. Their model shrinks instead.
+            var hidden = pickable.m_hideWhenPicked;
+            Transform? modelShrunkWhileBare = null;
+            if (hidden != null && hidden.transform.parent == planted.transform &&
+                planted.GetComponentsInChildren<Collider>(true).All(collider => collider.transform.IsChildOf(hidden.transform)))
+            {
+                modelShrunkWhileBare = hidden.transform;
+                pickable.m_hideWhenPicked = null;
+            }
             var piece = planted.AddComponent<Piece>();
             piece.m_name = produceName + " plant";
             piece.m_description = "Planted bare; the harvest grows after a while and regrows after every pick. " +
@@ -110,7 +144,7 @@ internal static class FarmEverything
             PieceManager.Instance.AddPiece(new CustomPiece(planted, false, new PieceConfig { PieceTable = PieceTables.Cultivator }));
             piece.m_enabled = _enabled.Value;
 
-            var plant = new Plant(seed, piece, minutes);
+            var plant = new Plant(seed, piece, minutes, modelShrunkWhileBare);
             Plants[wildName] = plant;
             Plants[planted.name] = plant;
         }
@@ -127,7 +161,8 @@ internal static class FarmEverything
     private static class UprootWithCultivator
     {
         private static void Prefix(
-            Player __instance, bool takeInput, ref bool ___m_blockRemove, ref float ___m_lastToolUseTime, ZSyncAnimation ___m_zanim)
+            Player __instance, bool takeInput, ref bool ___m_blockRemove, ref float ___m_lastToolUseTime,
+            ref int ___m_buildRemoveDebt, ZSyncAnimation ___m_zanim)
         {
             if (!_enabled.Value || !takeInput || Plants.Count == 0 || !__instance.InPlaceMode() || __instance.IsDead()) return;
             if (__instance.GetBuildTool().name != PieceTables.Cultivator || Hud.IsPieceSelectionVisible()) return;
@@ -142,16 +177,32 @@ internal static class FarmEverything
             if (pickable == null || !Plants.TryGetValue(Utils.GetPrefabName(pickable.gameObject.name), out var plant)) return;
             var view = pickable.GetComponent<ZNetView>();
             if (view == null || !view.IsValid()) return;
+            var cultivator = __instance.RightItem;
+            if (!__instance.HaveStamina(cultivator.m_shared.m_attack.m_attackStamina))
+            {
+                Hud.instance.StaminaBarEmptyFlash();
+                return;
+            }
 
             ___m_blockRemove = true;
             ___m_lastToolUseTime = Time.time;
             var position = pickable.transform.position;
             view.ClaimOwnership();
-            pickable.m_pickEffector.Create(position, Quaternion.identity);
+            // As the owner, the pick runs right here, so the harvest drops before the plant is destroyed.
+            if (pickable.GetPicked()) pickable.m_pickEffector.Create(position, Quaternion.identity);
+            else pickable.Interact(__instance, false, false);
             ItemDrop.OnCreateNew(Object.Instantiate(plant.Seed, position + Vector3.up * 0.5f, Quaternion.identity));
             ZNetScene.instance.Destroy(pickable.gameObject);
+
+            // Same cost as removing a piece with the hammer (Player.UpdatePlacement). The remove debt keeps
+            // plant-and-uproot loops from raising Farming, which every planting does.
+            __instance.AddNoise(50f);
+            __instance.UseStamina(GetBuildStamina(__instance));
+            if (__instance.GetBuildTool().m_skill != Skills.SkillType.None && ___m_buildRemoveDebt < 20) ___m_buildRemoveDebt++;
+            if (cultivator.m_shared.m_useDurability)
+                cultivator.m_durability -= GetPlaceDurability(__instance, cultivator) * Game.m_durabilityRate;
             __instance.FaceLookDirection();
-            ___m_zanim.SetTrigger(__instance.RightItem.m_shared.m_attack.m_attackAnimation);
+            ___m_zanim.SetTrigger(cultivator.m_shared.m_attack.m_attackAnimation);
         }
     }
 
@@ -166,5 +217,26 @@ internal static class FarmEverything
             if (Plants.TryGetValue(name, out var plant) && name == plant.Piece.name)
                 __instance.m_respawnTimeMinutes = plant.Minutes.Value;
         }
+    }
+
+    // Awake covers loading, SetPicked every pick and regrow; both run on every client.
+    [HarmonyPatch(typeof(Pickable), "Awake")]
+    private static class ScaleBareModelOnLoad
+    {
+        private static void Postfix(Pickable __instance, bool ___m_picked) => ScaleBareModel(__instance, ___m_picked);
+    }
+
+    [HarmonyPatch(typeof(Pickable), nameof(Pickable.SetPicked))]
+    private static class ScaleBareModelOnPick
+    {
+        private static void Postfix(Pickable __instance, bool picked) => ScaleBareModel(__instance, picked);
+    }
+
+    private static void ScaleBareModel(Pickable pickable, bool picked)
+    {
+        var name = Utils.GetPrefabName(pickable.gameObject.name);
+        if (!Plants.TryGetValue(name, out var plant) || plant.ModelShrunkWhileBare == null || name != plant.Piece.name) return;
+        var model = pickable.transform.Find(plant.ModelShrunkWhileBare.name);
+        if (model != null) model.localScale = plant.ModelShrunkWhileBare.localScale * (picked ? BareModelScale : 1f);
     }
 }
