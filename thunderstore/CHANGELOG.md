@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.14
+
 - Fix: being pushed into a portal with the inventory or a crafting station open no longer locks the screen; the inventory closes and the map opens.
 
 ## 0.0.13
