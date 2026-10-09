@@ -2,6 +2,7 @@
 
 - Fix: the kiln wood filter no longer deletes wood that other players put into a kiln you own. `KilnAllowedWood` now ignores letter case and logs a warning for names that are not kiln wood.
 - Craft without roof: the fermenter, spinning wheel and beds now also work without a roof or cover.
+- Fix: faster loot from dead creatures no longer makes player corpses and bosses vanish early; both keep the vanilla timing.
 
 - Farm everything: uproot wild berry bushes, mushrooms, thistle, dandelion and fiddlehead with the Cultivator for seeds and plant them on cultivated ground; planted ones regrow in `FarmEverything<Prefab>Minutes` (default 1.5x wild).
 - Plant growth timer: hovering a sapling or a bare planted bush shows how long until it grows.

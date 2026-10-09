@@ -4,9 +4,10 @@ using UnityEngine;
 
 namespace ValheimUtilsByAi.Features;
 
-// Ragdoll.Awake schedules DestroyNow (poof effect + loot) after m_ttl seconds; only the ZDO owner, the game
-// that killed the creature, acts on it. The ttl is capped for that call and restored afterwards.
-[HarmonyPatch(typeof(Ragdoll), "Awake")]
+// Ragdoll.Awake schedules DestroyNow (puff + loot) after m_ttl seconds; only the ZDO owner, the game that controlled
+// the creature when it died, acts on it. Setup runs right after Awake on that game and is the first point that knows
+// the creature: players pass no CharacterDrop, and boss deaths are timed to the body (Fader's explosion sound).
+[HarmonyPatch(typeof(Ragdoll), nameof(Ragdoll.Setup))]
 internal static class FastCorpseDrop
 {
     private static ConfigEntry<bool> _enabled = null!;
@@ -19,7 +20,7 @@ internal static class FastCorpseDrop
             "FastCorpseDrop",
             true,
             "Dead creatures vanish and drop their loot after FastCorpseDropSeconds instead of lying around for " +
-            "several seconds.");
+            "several seconds. Player bodies and bosses keep the vanilla timing.");
         _seconds = config.Bind(
             "Combat",
             "FastCorpseDropSeconds",
@@ -29,11 +30,11 @@ internal static class FastCorpseDrop
                 new AcceptableValueRange<float>(0.1f, 10f)));
     }
 
-    private static void Prefix(Ragdoll __instance, out float __state)
+    private static void Postfix(Ragdoll __instance, CharacterDrop? characterDrop)
     {
-        __state = __instance.m_ttl;
-        if (_enabled.Value) __instance.m_ttl = Mathf.Min(__instance.m_ttl, _seconds.Value);
+        if (!_enabled.Value || characterDrop == null) return;
+        if (characterDrop.TryGetComponent(out Character character) && character.IsBoss()) return;
+        __instance.CancelInvoke("DestroyNow");
+        __instance.InvokeRepeating("DestroyNow", Mathf.Min(__instance.m_ttl, _seconds.Value), 1f);
     }
-
-    private static void Postfix(Ragdoll __instance, float __state) => __instance.m_ttl = __state;
 }

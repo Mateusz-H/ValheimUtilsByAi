@@ -139,7 +139,10 @@ Side: Client. Only the player who builds needs the mod; other players and the se
 
 A killed creature's body vanishes in a puff and drops its loot after `[Combat] FastCorpseDropSeconds` (default 0.5 s,
 range 0.1-10) instead of lying there for several seconds. Bodies that vanish sooner in vanilla are left alone, and
-the loot itself, the death animation start and the puff effect stay vanilla.
+the loot itself, the death animation start and the puff effect stay vanilla. Player bodies and bosses keep the
+vanilla timing. Creatures that leave no body, such as skeletons, blobs, Seekers, Bonemass, Moder and the Queen,
+already drop their loot instantly, so nothing changes for them. When Thungr falls in the Zil & Thungr fight, his
+trophy drops at once as in vanilla; only his body vanishes sooner.
 
 Side: Client. It applies to creatures your game controls when they die: always in single player; in multiplayer
 usually the ones near you. Other players and the server don't need the mod; a body controlled by a player without
