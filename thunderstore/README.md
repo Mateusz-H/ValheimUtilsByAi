@@ -113,8 +113,9 @@ changes which power `F` will use. A power that is already running keeps going an
 switching can't skip the cooldown.
 
 You can only pick powers this character has already selected at a guardian stone at least once (the game
-remembers them). New powers still have to be unlocked at the stones as usual. The button is hidden until you
-have picked at least one.
+remembers them). Only powers whose boss has been killed in the current world are offered (a trophy carried in
+from another world does not count). New powers still have to be unlocked at the stones as usual. The button is
+hidden until you have picked at least one.
 
 Side: Client. Other players and the server don't need the mod.
 

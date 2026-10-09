@@ -22,6 +22,15 @@ internal static class ForsakenPowerAnywhere
         ["GP_Yagluth"] = "Yagluth", ["GP_Queen"] = "The Queen", ["GP_Ashlands"] = "Fader", ["GP_DeepNorth"] = "Deep North",
     };
 
+    // Vanilla stones check that their trophy is placed, which a client can't see from afar; the world key set by the
+    // boss kill is the closest per-world check. FrozenKing sets defeated_frozenking after phase one, _p3 on the kill.
+    private static readonly Dictionary<string, string> BossKeys = new()
+    {
+        ["GP_Eikthyr"] = "defeated_eikthyr", ["GP_TheElder"] = "defeated_gdking", ["GP_Bonemass"] = "defeated_bonemass",
+        ["GP_Moder"] = "defeated_dragon", ["GP_Yagluth"] = "defeated_goblinking", ["GP_Queen"] = "defeated_queen",
+        ["GP_Ashlands"] = "defeated_fader", ["GP_DeepNorth"] = "defeated_frozenking_p3",
+    };
+
     private static ConfigEntry<bool> _enabled = null!;
     private static Button? _button;
 
@@ -67,7 +76,9 @@ internal static class ForsakenPowerAnywhere
     }
 
     private static List<string> KnownPowers(Player player) =>
-        Powers.Where(p => player.HaveUniqueKey(p) && ObjectDB.instance.GetStatusEffect(p.GetStableHashCode())).ToList();
+        Powers.Where(p => player.HaveUniqueKey(p) && ZoneSystem.instance != null &&
+                          ZoneSystem.instance.GetGlobalKey(BossKeys[p]) &&
+                          ObjectDB.instance.GetStatusEffect(p.GetStableHashCode())).ToList();
 
     private static void UpdateLabel(Player player)
     {
