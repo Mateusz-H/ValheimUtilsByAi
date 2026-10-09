@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BepInEx.Configuration;
 using HarmonyLib;
+using Splatform;
 using UnityEngine;
 
 namespace ValheimUtilsByAi.Features;
@@ -20,6 +21,7 @@ internal static class PortalMapTravel
 
     private static readonly Dictionary<Minimap.PinData, Quaternion> Pins = new();
     private static float _exitDistance;
+    private static bool _allowAllItems;
 
     public static void Bind(ConfigFile config)
     {
@@ -37,50 +39,55 @@ internal static class PortalMapTravel
         Pins.Clear();
     }
 
+    // Same checks and messages as the start of vanilla TeleportWorld.Teleport, minus the tag link requirement.
+    private static bool PassesVanillaChecks(Player player, bool allowAllItems)
+    {
+        if (ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoPortals))
+        {
+            player.Message(MessageHud.MessageType.Center, "$msg_blocked");
+            return false;
+        }
+        if (ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoBossPortals)
+            && (RandEventSystem.instance.GetBossEvent() != null
+                || (ZoneSystem.instance.GetGlobalKey(GlobalKeys.activeBosses, out float bosses) && bosses > 0f)))
+        {
+            player.Message(MessageHud.MessageType.Center, "$msg_blockedbyboss");
+            return false;
+        }
+        if (!player.IsTeleportable(allowAllItems))
+        {
+            player.Message(MessageHud.MessageType.Center, "$msg_noteleport");
+            return false;
+        }
+        return true;
+    }
+
     [HarmonyPatch(typeof(TeleportWorld), nameof(TeleportWorld.Teleport))]
     private static class OpenMapInsteadOfTeleport
     {
         private static bool Prefix(TeleportWorld __instance, Player player)
         {
             if (!_enabled.Value || Game.m_noMap || Minimap.instance == null) return true;
-            if (!PassesVanillaChecks(__instance, player)) return false;
+            if (player.IsTeleporting() || !PassesVanillaChecks(player, __instance.m_allowAllItems)) return false;
 
             ClearPins();
             Minimap.instance.SetMapMode(Minimap.MapMode.Large);
             _exitDistance = __instance.m_exitDistance;
+            _allowAllItems = __instance.m_allowAllItems;
             ZDO? source = __instance.GetComponent<ZNetView>()?.GetZDO();
             foreach (ZDO zdo in ZDOMan.instance.GetPortalList())
             {
                 if (zdo == source) continue;
+                string tag = zdo.GetString(ZDOVars.s_tag).RemoveRichTextTags();
+                string author = zdo.GetString(ZDOVars.s_tagauthor);
                 var pin = Minimap.instance.AddPin(
-                    zdo.GetPosition(), Minimap.PinType.Icon4, zdo.GetString(ZDOVars.s_tag), save: false, isChecked: false);
+                    zdo.GetPosition(), Minimap.PinType.Icon4, string.IsNullOrWhiteSpace(tag) ? "$piece_portal" : tag,
+                    save: false, isChecked: false,
+                    author: string.IsNullOrEmpty(author) ? PlatformUserID.None : new PlatformUserID(author));
                 Pins[pin] = zdo.GetRotation();
             }
             player.Message(MessageHud.MessageType.Center, "Click a portal on the map");
             return false;
-        }
-
-        // Same checks and messages as the start of vanilla TeleportWorld.Teleport, minus the tag link requirement.
-        private static bool PassesVanillaChecks(TeleportWorld portal, Player player)
-        {
-            if (ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoPortals))
-            {
-                player.Message(MessageHud.MessageType.Center, "$msg_blocked");
-                return false;
-            }
-            if (ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoBossPortals)
-                && (RandEventSystem.instance.GetBossEvent() != null
-                    || (ZoneSystem.instance.GetGlobalKey(GlobalKeys.activeBosses, out float bosses) && bosses > 0f)))
-            {
-                player.Message(MessageHud.MessageType.Center, "$msg_blockedbyboss");
-                return false;
-            }
-            if (!player.IsTeleportable(portal.m_allowAllItems))
-            {
-                player.Message(MessageHud.MessageType.Center, "$msg_noteleport");
-                return false;
-            }
-            return true;
         }
     }
 
@@ -89,7 +96,7 @@ internal static class PortalMapTravel
     {
         private static bool Prefix(Minimap __instance)
         {
-            if (Pins.Count == 0) return true;
+            if (!_enabled.Value || Pins.Count == 0) return true;
             Player player = Player.m_localPlayer;
             if (player == null) return true;
 
@@ -108,18 +115,21 @@ internal static class PortalMapTravel
 
             Quaternion rotation = Pins[closest];
             Vector3 target = closest.m_pos + rotation * Vector3.forward * _exitDistance + Vector3.up;
-            if (player.TeleportTo(target, rotation, distantTeleport: true))
+            // Checked again: autopickup and walking keep working while the map is open.
+            if (PassesVanillaChecks(player, _allowAllItems) && player.TeleportTo(target, rotation, distantTeleport: true))
                 Game.instance.IncrementPlayerStat(PlayerStatType.PortalsUsed);
             __instance.SetMapMode(Minimap.MapMode.Small);
             return false;
         }
     }
 
-    // Double click and gamepad A would otherwise drop a saved pin while choosing a portal.
+    // Double click and gamepad A would otherwise drop a saved pin while choosing a portal. Vanilla only calls this on
+    // the large map; a travel click closes it before the double-click check in the same OnMapLeftUp, so block that too.
     [HarmonyPatch(typeof(Minimap), "ShowPinNameInput")]
     private static class BlockNewPinsWhileChoosing
     {
-        private static bool Prefix() => Pins.Count == 0;
+        private static bool Prefix(Minimap __instance) =>
+            !_enabled.Value || (__instance.m_mode == Minimap.MapMode.Large && Pins.Count == 0);
     }
 
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.SetMapMode))]

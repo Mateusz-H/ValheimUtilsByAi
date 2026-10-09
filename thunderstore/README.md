@@ -200,7 +200,9 @@ Stepping into any portal opens the large map with a portal pin for every portal 
 Click a pin to travel there; close the map to stay. Portal tags and connections no longer matter, so a single portal
 per outpost is enough. Everything else stays vanilla: the same item restrictions (`$msg_noteleport`), the
 `NoPortals` / `NoBossPortals` world modifiers, the loading screen and the exit spot in front of the target portal.
-The map pins are temporary and never saved.
+The map pins are temporary and never saved. Without a map (the `NoMap` world modifier or the `nomap` console
+command) portals keep their vanilla tag links. Pins can only be picked with a mouse: on a controller, stepping into a
+portal currently just opens a map you cannot pick from, so turn the feature off to keep vanilla portals.
 
 Side: Both. The client part works alone but only shows portals your game has already seen; with the mod on the
 server every portal in the world is listed. Other players without the mod keep vanilla portals.
