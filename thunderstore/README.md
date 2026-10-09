@@ -156,6 +156,14 @@ second or two before the chest counts for you.
 
 Side: Both. Chests owned by a player without the mod are never handed over to you, so they are not used.
 
+### Comfort range (`[Building] ComfortRange`, default: on)
+
+Beds, chairs, rugs, banners, fires and every other comfort piece count towards your comfort level from
+further away: `ComfortRangeMultiplier` times the vanilla 10 m (default 2, so 20 m). Which pieces stack,
+their comfort values and the shelter requirement stay vanilla.
+
+Side: Client. Only players with the mod get the longer range; the rested buff itself is unchanged for everyone else.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires

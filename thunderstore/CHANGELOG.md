@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Comfort range: comfort pieces count from 2x further away (configurable).
+
 ## 0.0.10
 
 - Fix: craft from containers and AutoStorage Link ignored newly built chests (and some older ones at random).
