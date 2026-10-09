@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Craft and build from nearby containers: a craft now takes its materials out of the chests the moment you click Craft and puts back what is left if you cancel, so other players can open those chests during your craft instead of getting "Someone else is using this".
+
+- Fix: AutoStorage no longer loses items (honey, bars, coal, ...) when a player opens an output chest right after a piece put something into it.
+
+- AutoStorage: clicking with a link tool while aiming at nothing in reach now says so instead of doing nothing.
+
 - Higher breeding limit: tamed animals keep breeding until 20 of their kind stand within 10 m instead of the vanilla handful. Set the number with `[World] BreedingLimitCount`, turn it off with `[World] BreedingLimit`.
 
 - Carts and ships on map: every cart and ship in the world shows on the map and minimap with its build-menu icon. Turn it off with `[World] VehiclesOnMap`.

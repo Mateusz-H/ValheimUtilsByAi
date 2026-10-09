@@ -86,9 +86,10 @@ exactly like a vanilla pickup, and leaves the ground only as far as it went into
 lost.
 
 In multiplayer only the game that owns a chest edits it. A linked piece asks the chest's owner to hand it over and
-waits until it does; the owner hands it over only while nobody has the chest open or is crafting from it, so two
-players never write to the same chest at once. The game that controls a piece (in multiplayer usually the first player
-who came near it) runs its automation with its own settings.
+waits until it does; the owner hands it over only while nobody has the chest open, so two players never write to the
+same chest at once. A player opening a chest always sees what the linked pieces put into it, even a moment before.
+The game that controls a piece (in multiplayer usually the first player who came near it) runs its automation with its
+own settings.
 
 Links made with the single AutoStorage Link tool of 0.0.10 and earlier are removed: link those pieces again with Link
 input and Link output. The separate AutoStorage Hammer from earlier versions is gone: any copy in your inventory turns
@@ -199,11 +200,17 @@ you can't use are ignored. The item you upgrade must still be in your inventory.
 several ingredients still use your inventory only, and their amounts don't count chests. Recipe discovery still comes
 only from what you carry, and no-cost mode never touches chests.
 
-Multiplayer: materials are only taken from a chest while your game holds it, so nothing is duplicated or lost. When
-you click Craft or pick a build piece, your game asks for the chests holding its materials, the same way the game
-asks when you open a chest. A chest another player has open is not counted until they close it. If another player is
-crafting from a chest you need, your craft says "Chest busy, try again" and takes nothing; a build click that needs a
-chest your game doesn't hold yet says "Fetching materials, click again". The next try works.
+Multiplayer: materials are only taken from a chest while your game holds it, so nothing is duplicated. When you click
+Craft or pick a build piece, your game asks for the chests holding its materials, the same way the game asks when you
+open a chest. A craft takes what your inventory lacks out of the chests right when you click Craft (from chests your
+game didn't hold yet as soon as they arrive, usually a fraction of a second) and holds it until the craft finishes, so
+other players can open those chests during the craft. If you cancel the craft, close the inventory or walk away, the
+materials go back to their chest; if that chest is full or another game holds it now, into your inventory, and if
+that is full too, onto the ground. Only a crash, or losing the connection during the craft, can lose them: without
+a connection they only go back to their chest, never to your inventory or the ground, so they can never exist twice.
+A chest another player has open is not counted until they close it. If a chest you need never arrives, your craft
+says "Chest busy, try again" and takes nothing; a build click that needs a chest your game doesn't hold yet says
+"Fetching materials, click again". The next try works.
 
 Side: Client. Works for you alone; nobody else needs the mod (owners without the mod hand chests over through the
 vanilla open request).
