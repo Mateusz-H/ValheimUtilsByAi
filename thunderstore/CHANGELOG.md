@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Comfort range: comfort pieces count from up to `ComfortRangeMeters` away (default 20 m, vanilla 10 m).
+- Larger crafting station build range: config is now `StationBuildRangeMeters` (default 40 m) instead of a multiplier; the old `StationBuildRangeMultiplier` key is ignored.
+
 ## 0.0.10
 
 - Fix: craft from containers and AutoStorage Link ignored newly built chests (and some older ones at random).
