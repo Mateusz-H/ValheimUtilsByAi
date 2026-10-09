@@ -27,6 +27,7 @@ public sealed class Plugin : BaseUnityPlugin
         CraftFromContainers.Bind(Config);
         ComfortRange.Bind(Config);
         ExtensionRange.Bind(Config);
+        PortalMapTravel.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }
