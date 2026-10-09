@@ -1,14 +1,32 @@
 ## Unreleased
 
-- Farm everything: uproot wild berry bushes, mushrooms, thistle, dandelion and fiddlehead with the Cultivator for seeds and plant them on cultivated ground; planted ones regrow in `FarmEverything<Prefab>Minutes` (default 1.5x wild).
+- Fix: the kiln wood filter no longer deletes wood that other players put into a kiln you own. `KilnAllowedWood` now ignores letter case and logs a warning for names that are not kiln wood.
+- Craft without roof: the fermenter, spinning wheel and beds now also work without a roof or cover.
+- Fix: faster loot from dead creatures no longer makes player corpses and bosses vanish early; both keep the vanilla timing.
+- Fix: switch Forsaken power anywhere only offers powers whose boss has been killed in the current world, so a character from another world or server no longer gets every power it picked there.
+- Fix: auto repair at crafting stations repairs all worn items at once with a single sound, instead of piling up one sound per item.
+- Fix: auto map sync no longer deletes the pins of players who are offline (after a server restart, a new character or `resetsharedmap`). The server now merges everyone's map instead of passing on the last upload, new players get the whole shared map when they join, and only a pin's owner can remove it for everyone. **Update the server too**; players on older versions keep syncing with an updated server.
+- Fix: auto map sync sends your map only after you explored something or changed your own pins, instead of re-sending everything others shared, so it uses far less network and CPU. It no longer turns hidden pin types back on, no longer leaks one world's map into another world on a listen server, and skips worlds without a map and servers without the mod.
+- Fix: feeding troughs could lose or duplicate items in multiplayer when an animal ate while another player was using the trough. The animal now waits at the trough until the game that holds it hands it over, which only happens while nobody has it open. **All players and the server should update**: older versions still take the trough without asking, and a trough held by an older version is never handed over, so an animal gives up on it after 30 s.
+- Fix: Lox and Moose now eat from feeding troughs. Animals no longer eat from a trough through a gate that closed on their way and give up after 30 s if they can't reach it, summoned creatures leave the troughs alone, and `FeedingTroughRange` is limited to 1-50 m.
+- Fix: craft from containers no longer makes nearby chests flip back and forth between players while two of you have the inventory open or are building, which made crafts fail without a word, the amounts flicker and chests sometimes refuse to open. Your game now asks for a chest only when you click Craft or pick a build piece, and only for chests holding its materials. A chest another player is crafting from says "Chest busy, try again" and takes nothing.
+- Fix: craft from containers ignores feeding troughs, so crafting and planting no longer use up animal feed, and one-ingredient recipes no longer show chest amounts they can't use. Nobody else needs the mod anymore: chests held by players without it are used too. **Everyone should update**: requests from 0.0.9 and 0.0.10 to an updated player are ignored, so an older game only uses chests it already holds.
+- Auto storage: **AutoStorage Link is split into AutoStorage Link input and AutoStorage Link output** (Hammer > Misc). Link input picks the chests a piece takes its ore, wood, fuel, raw food or mead base from, Link output the chests it puts its products into; a piece can have several of each, and one chest can be both. **All existing links are removed: link your pieces again with the new tools.** A chest linked both ways also feeds a piece its own products, so a windmill grinds its oats on into oat flour; use separate chests to keep the oats.
+- Auto storage: the frigid kiln, hot tub, birds' nest and frost foundry work with it too (they already did; now documented).
+- Fix: auto storage respects wards and private chests. You can only link or unlink a chest you could open and only pick a piece inside a ward that lets you in, so nobody can empty your chests or take your honey through a link anymore.
+- Fix: auto storage no longer stops using a chest for good after a player crashed or lost connection with it open, and no longer takes a chest away from a player who is crafting from it.
+- Fix: auto storage no longer duplicates products in new game+ worlds (world level above 0) when an output chest is nearly full.
+- Auto storage: **everyone should update, players and server.** Older versions don't know the new links, so pieces they control don't run them, and their old links are removed as soon as an updated game controls the piece.
+
+- Farm everything: uproot wild berry bushes, mushrooms, thistle, dandelion and fiddlehead with the Cultivator for seeds and plant them on cultivated ground; planted ones regrow in `FarmEverything<Prefab>Minutes` (default 1.5x wild, 1-10000). Bare planted mushrooms, thistle, dandelion and fiddlehead show as a small plant. Uprooting costs stamina and Cultivator durability like hammer removal, and a plant that still has its harvest drops it first.
 - Plant growth timer: hovering a sapling or a bare planted bush shows how long until it grows.
 
-- Portal map travel: stepping into a portal opens the map with every portal pinned; click one to travel there.
+- Portal map travel: stepping into a portal opens the map with every portal pinned; click one to travel there (mouse only; vanilla item restrictions and portal world modifiers still apply).
 
-- Station extension range: extensions upgrade stations from up to `ExtensionRangeMeters` away (default 10 m, vanilla 5 m) and can be placed that far.
+- Station extension range: extensions upgrade stations from up to `ExtensionRangeMeters` away (default 10 m; vanilla 2-5 m depending on the extension, never shrunk) and can be placed that far.
 
-- Comfort range: comfort pieces count from up to `ComfortRangeMeters` away (default 20 m, vanilla 10 m).
-- Larger crafting station build range: config is now `StationBuildRangeMeters` (default 40 m) instead of a multiplier; the old `StationBuildRangeMultiplier` key is ignored.
+- Comfort range: comfort pieces count from up to `ComfortRangeMeters` away (default 20 m, max 64 m, vanilla 10 m); resting still needs a burning fire nearby.
+- Larger crafting station build range: config is now `StationBuildRangeMeters` (default 40 m, max 64 m, never below a station's vanilla range: 20 m, artisan table 40 m) instead of a multiplier; the old `StationBuildRangeMultiplier` key is ignored. At the default the artisan table keeps its vanilla 40 m (0.0.10 doubled it to 80 m).
 
 ## 0.0.10
 

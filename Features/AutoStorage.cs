@@ -11,22 +11,25 @@ using UnityEngine;
 
 namespace ValheimUtilsByAi.Features;
 
-// "AutoStorage Link" hammer tool. It links a processing piece (smelter family, beehive, sap collector, cooking
-// station, fermenter) to one player-built chest. The piece's ZDO owner then pulls inputs from that chest and
-// pushes outputs into it on the piece's own vanilla update tick.
+// "AutoStorage Link input" and "AutoStorage Link output" hammer tools. They link a processing piece (smelter family,
+// beehive, sap collector, cooking station, fermenter) to player-built chests: the piece's ZDO owner pulls inputs from
+// its input chests and pushes products into its output chests on the piece's own vanilla update tick.
 //
-// The link is stored on the piece as the chest's world position: ZDOIDs are reassigned on every world load,
-// so they cannot be persisted. Chest edits only stick on the chest's ZDO owner, so the piece owner asks the
-// chest's owner to hand it over and skips ticks until it owns the chest or while a player has it open.
+// Links are stored on the piece as the chests' world positions, one list per direction: ZDOIDs are reassigned on
+// every world load, so they cannot be persisted. Chest edits only stick on the chest's ZDO owner, so the piece owner
+// asks the chest's owner to hand it over and skips that chest until it owns it, and while a player has it open.
 internal static class AutoStorage
 {
+    private enum Direction { Input, Output }
+
     private const string HammerPrefab = "AutoStorageHammer";
     private const string HammerToken = "$item_autostoragehammer";
-    private const string LinkPrefab = "AutoStorageLink";
-    private const string LinkToken = "$piece_autostoragelink";
     private const float ChestMatchRadius = 0.5f;
 
-    private static readonly int LinkKey = "mh_AutoStorageLink".GetStableHashCode();
+    private static readonly int InputChestsKey = "mh_AutoStorageInputs".GetStableHashCode();
+    private static readonly int OutputChestsKey = "mh_AutoStorageOutputs".GetStableHashCode();
+    // The single two-way link of 0.0.10 and earlier. Cleared, not migrated: inputs and outputs are linked separately now.
+    private static readonly int LegacyLinkKey = "mh_AutoStorageLink".GetStableHashCode();
 
     private static ConfigEntry<bool> _enabled = null!;
     private static ConfigEntry<float> _maxLinkDistance = null!;
@@ -38,51 +41,46 @@ internal static class AutoStorage
             "Crafting",
             "AutoStorage",
             true,
-            "Adds the AutoStorage Link hammer tool. Pieces linked to a chest with it " +
-            "(kiln, smelter, blast furnace, spinning wheel, windmill, eitr refinery, beehive, sap collector, " +
-            "cooking stations, fermenter) take their inputs from that chest and put their products into it. " +
-            "When this is off the automation and linking stop; links are kept.");
+            "Adds the AutoStorage Link input and AutoStorage Link output hammer tools. A processing piece (kiln, " +
+            "smelter, blast furnace, spinning wheel, windmill, eitr refinery, frigid kiln, hot tub, beehive, birds' " +
+            "nest, sap extractor, cooking stations, frost foundry, fermenter) takes its inputs from the chests linked " +
+            "as its input and puts its products into the chests linked as its output; one chest can be both. " +
+            "When this is off the automation and linking stop; links are kept. In multiplayer the setting of the game " +
+            "that controls the piece applies.");
         _maxLinkDistance = config.Bind(
             "Crafting",
             "AutoStorageMaxLinkDistance",
             100f,
-            "Maximum distance in meters between a piece and the chest it is linked to. " +
+            "Maximum distance in meters between a piece and a chest linked to it. " +
             "Pieces farther than roughly 64 m from any player are not simulated by the game, so a chest beyond " +
             "that distance from the piece may simply not be loaded.");
         _collectRadius = config.Bind(
             "Crafting",
             "AutoStorageCollectRadius",
             5f,
-            "Once a minute, products of a linked piece lying on the ground within this many meters of it (for " +
-            "example because the chest was full or open) are moved into its chest. 0 turns this off.");
+            "Once a minute, items of the kinds a linked piece makes lying on the ground within this many meters of it " +
+            "(for example because its output chests were full or open) are moved into its output chests. " +
+            "0 turns this off.");
 
         PrefabManager.OnVanillaPrefabsAvailable += RegisterPrefabs;
     }
+
+    private static Piece? _inputTool;
+    private static Piece? _outputTool;
 
     private static void RegisterPrefabs()
     {
         PrefabManager.OnVanillaPrefabsAvailable -= RegisterPrefabs;
 
-        // A normal Misc piece cloned from the Repair tool for its icon. Repair/remove flags would make the build
-        // menu treat it as a second special button; the ghost and the click are handled by the patches below.
-        var linkConfig = new PieceConfig
-        {
-            Name = LinkToken,
-            Description = "$piece_autostoragelink_description",
-            PieceTable = PieceTables.Hammer,
-            Category = PieceCategories.Misc,
-            Usage = new[] { PieceUsages.Misc },
-        };
-        var link = new CustomPiece(LinkPrefab, "piece_repair", linkConfig);
-        link.Piece.m_repairPiece = false;
-        link.Piece.m_removePiece = false;
-        link.Piece.m_canRotate = false;
-        link.Piece.m_resources = Array.Empty<Piece.Requirement>();
-        link.Piece.m_craftingStation = null;
-        PieceManager.Instance.AddPiece(link);
-        _linkPiece = link.Piece;
+        _inputTool = AddLinkTool("AutoStorageLinkInput", "piece_autostoragelinkinput", "AutoStorage Link input", "CopperOre",
+            "Click a processing piece, then a chest it should take its inputs from (ore, wood, fuel, raw food, " +
+            "mead base). Click the pair again to unlink. Click a chest with nothing selected to unlink it from every " +
+            "piece's inputs.");
+        _outputTool = AddLinkTool("AutoStorageLinkOutput", "piece_autostoragelinkoutput", "AutoStorage Link output", "Copper",
+            "Click a processing piece, then a chest it should put its products into. Click the pair again to unlink. " +
+            "Click a chest with nothing selected to unlink it from every piece's outputs.");
 
-        // Replaced by the Link piece: kept without a recipe so saved copies still load and get refunded.
+        // Replaced by the link tools: kept without a recipe so saved copies still load and get refunded.
         var hammer = new CustomItem(HammerPrefab, "Hammer", new ItemConfig
         {
             Name = HammerToken,
@@ -94,13 +92,43 @@ internal static class AutoStorage
         ItemManager.Instance.AddItem(hammer);
 
         var localization = LocalizationManager.Instance.GetLocalization();
-        localization.AddTranslation(LinkToken.TrimStart('$'), "AutoStorage Link");
-        localization.AddTranslation("piece_autostoragelink_description",
-            "Click a processing piece, then a chest to link them. Click the pair again to unlink. " +
-            "Click a chest with nothing selected to unlink everything from it.");
         localization.AddTranslation(HammerToken.TrimStart('$'), "AutoStorage Hammer");
         localization.AddTranslation("item_autostoragehammer_description",
-            "Replaced by AutoStorage Link in the Hammer's Misc tab. Refunded automatically.");
+            "Replaced by AutoStorage Link input and AutoStorage Link output in the Hammer's Misc tab. Refunded automatically.");
+    }
+
+    // A normal Misc piece cloned from the Repair tool. Repair/remove flags would make the build menu treat it as a
+    // second special button; the ghost and the click are handled by the patches below. Each tool shows an item's icon
+    // (ore in, bar out) so the two can be told apart; the Repair icon stays if the item is missing.
+    private static Piece AddLinkTool(string prefabName, string token, string name, string iconItem, string description)
+    {
+        var tool = new CustomPiece(prefabName, "piece_repair", new PieceConfig
+        {
+            Name = "$" + token,
+            Description = "$" + token + "_description",
+            PieceTable = PieceTables.Hammer,
+            Category = PieceCategories.Misc,
+            Usage = new[] { PieceUsages.Misc },
+            Icon = ItemIcon(iconItem),
+        });
+        tool.Piece.m_repairPiece = false;
+        tool.Piece.m_removePiece = false;
+        tool.Piece.m_canRotate = false;
+        tool.Piece.m_resources = Array.Empty<Piece.Requirement>();
+        tool.Piece.m_craftingStation = null;
+        PieceManager.Instance.AddPiece(tool);
+
+        var localization = LocalizationManager.Instance.GetLocalization();
+        localization.AddTranslation(token, name);
+        localization.AddTranslation(token + "_description", description);
+        return tool.Piece;
+    }
+
+    private static Sprite? ItemIcon(string itemPrefab)
+    {
+        var prefab = PrefabManager.Instance.GetPrefab(itemPrefab);
+        var item = prefab == null ? null : prefab.GetComponent<ItemDrop>();
+        return item == null ? null : item.m_itemData.GetIcon();
     }
 
     // ---------------------------------------------------------------- chest registry and link resolution
@@ -132,11 +160,12 @@ internal static class AutoStorage
     }
 
     // Runs on the chest's owner, which hands the chest over only while nobody has it open, like vanilla
-    // Container.RPC_RequestOpen. Only the owner hands over, so two peers never edit the chest at once.
+    // Container.RPC_RequestOpen, and not while its own player is crafting from it. Only the owner hands over, so two
+    // peers never edit the chest at once.
     private static void RPC_RequestOwn(Container chest, long sender)
     {
         var view = ContainerView(chest);
-        if (!view.IsValid() || !view.IsOwner() || chest.IsInUse()) return;
+        if (!view.IsValid() || !view.IsOwner() || chest.IsInUse() || CraftFromContainers.IsCraftingFrom(chest)) return;
         ZDOMan.instance.ForceSendZDO(sender, view.GetZDO().m_uid);
         view.GetZDO().SetOwner(sender);
     }
@@ -158,51 +187,114 @@ internal static class AutoStorage
         for (var i = Chests.Count - 1; i >= 0; i--)
         {
             var chest = Chests[i];
-            if (chest == null) { Chests.RemoveAt(i); continue; }
+            if (chest == null) { Chests.RemoveAt(i); NextRequest.Remove(chest!); continue; }
             if (Vector3.Distance(chest.transform.position, position) <= ChestMatchRadius) return chest;
         }
         return null;
     }
 
-    private static Container? LinkedChest(ZNetView nview)
+    private static int ChestsKey(Direction direction) => direction == Direction.Input ? InputChestsKey : OutputChestsKey;
+
+    // Null when the piece has no chests in this direction.
+    private static List<Vector3>? ReadChestPositions(ZDO zdo, Direction direction)
     {
-        if (!nview.IsValid()) return null;
-        var position = nview.GetZDO().GetVec3(LinkKey, Vector3.zero);
-        return position == Vector3.zero ? null : FindChestAt(position);
+        var bytes = zdo.GetByteArray(ChestsKey(direction));
+        if (bytes == null) return null;
+        var package = new ZPackage(bytes);
+        var count = package.ReadInt();
+        var positions = new List<Vector3>(count);
+        for (var i = 0; i < count; i++) positions.Add(package.ReadVector3());
+        return positions;
     }
+
+    // Set even when empty, never removed: a removed ZDO key is not sent to the other peers.
+    private static void WriteChestPositions(ZNetView piece, Direction direction, List<Vector3> positions)
+    {
+        var package = new ZPackage();
+        package.Write(positions.Count);
+        foreach (var position in positions) package.Write(position);
+        piece.ClaimOwnership();
+        piece.GetZDO().Set(ChestsKey(direction), package.GetArray());
+    }
+
+    private static bool RemoveChest(List<Vector3> positions, Vector3 chestPosition) =>
+        positions.RemoveAll(position => Vector3.Distance(position, chestPosition) <= ChestMatchRadius) > 0;
 
     private static readonly AccessTools.FieldRef<Container, ZNetView> ContainerView =
         AccessTools.FieldRefAccess<Container, ZNetView>("m_nview");
     private static readonly Func<Container, bool> ContainerLoad =
         AccessTools.MethodDelegate<Func<Container, bool>>(AccessTools.Method(typeof(Container), "Load"));
 
-    // Inventory of the linked chest, ready to edit from this peer, or null when the chest is missing, too far,
-    // open in someone's UI, not loaded, or owned by another peer (ownership is then requested for a later tick).
-    // Only the owner's edits are saved by Container.OnContainerChanged.
-    private static Inventory? WritableInventory(ZNetView pieceView)
+    // Inventories of the piece's chests in this direction that this peer can edit right now, in link order; none while
+    // the feature is off or another peer simulates the piece. A chest that is missing, too far or open is skipped; one
+    // owned by another peer is asked for and skipped until it arrives. Only the owner's edits are saved by
+    // Container.OnContainerChanged. Open means IsInUse on the owner, not the s_inUse ZDO flag: that flag stays set after
+    // a player crashes with the chest open, and the owner refuses the hand-over while the chest really is open.
+    private static IReadOnlyList<Inventory> LinkedInventories(ZNetView pieceView, Direction direction)
     {
-        if (!_enabled.Value || !pieceView.IsValid() || !pieceView.IsOwner()) return null;
-        var chest = LinkedChest(pieceView);
-        if (chest == null) return null;
-        if (Vector3.Distance(chest.transform.position, pieceView.transform.position) > _maxLinkDistance.Value) return null;
-        var chestView = ContainerView(chest);
-        if (chestView == null || !chestView.IsValid()) return null;
-        if (chest.IsInUse() || chestView.GetZDO().GetInt(ZDOVars.s_inUse) == 1) return null;
-        if (!chestView.IsOwner()) { RequestOwnership(chest, chestView); return null; }
-        ContainerLoad(chest);
-        return chest.GetInventory();
+        if (!_enabled.Value || !pieceView.IsValid() || !pieceView.IsOwner()) return Array.Empty<Inventory>();
+        var zdo = pieceView.GetZDO();
+        if (zdo.GetVec3(LegacyLinkKey, Vector3.zero) != Vector3.zero) zdo.Set(LegacyLinkKey, Vector3.zero);
+        var positions = ReadChestPositions(zdo, direction);
+        if (positions == null || positions.Count == 0) return Array.Empty<Inventory>();
+
+        var inventories = new List<Inventory>(positions.Count);
+        foreach (var position in positions)
+        {
+            if (Vector3.Distance(position, pieceView.transform.position) > _maxLinkDistance.Value) continue;
+            var chest = FindChestAt(position);
+            if (chest == null || chest.IsInUse()) continue;
+            var chestView = ContainerView(chest);
+            if (chestView == null || !chestView.IsValid()) continue;
+            if (!chestView.IsOwner()) { RequestOwnership(chest, chestView); continue; }
+            ContainerLoad(chest);
+            inventories.Add(chest.GetInventory());
+        }
+        return inventories;
     }
 
-    private static bool TakeOne(Inventory inventory, ItemDrop item)
+    private static bool TakeOne(IReadOnlyList<Inventory> inputs, ItemDrop item)
     {
         var name = item.m_itemData.m_shared.m_name;
-        if (inventory.CountItems(name) < 1) return false;
-        inventory.RemoveItem(name, 1);
-        return true;
+        foreach (var inventory in inputs)
+        {
+            if (inventory.CountItems(name) < 1) continue;
+            inventory.RemoveItem(name, 1);
+            return true;
+        }
+        return false;
     }
 
-    private static bool Store(Inventory inventory, GameObject prefab, int amount) =>
-        amount > 0 && inventory.CanAddItem(prefab, amount) && inventory.AddItem(prefab, amount);
+    // Removes and returns the first item the piece's vanilla FindCookableItem picks from the input chests, in link
+    // order. Going through FindCookableItem keeps KilnWoodFilter's narrowing of the kiln's list.
+    private static ItemDrop.ItemData? TakeCookable<TPiece>(IReadOnlyList<Inventory> inputs, TPiece piece,
+        Func<TPiece, Inventory, ItemDrop.ItemData?> findCookable)
+    {
+        foreach (var inventory in inputs)
+        {
+            var item = findCookable(piece, inventory);
+            if (item != null && inventory.RemoveOneItem(item)) return item;
+        }
+        return null;
+    }
+
+    // All or nothing, into the first output chest with room for the whole amount. One item is used for both the room
+    // check and the add: CanAddItem(GameObject) checks room at the prefab's world level 0 while AddItem(GameObject)
+    // adds at the current one, and a partial add returns false after adding, so in new game+ worlds the callers
+    // delivered the products a second time.
+    private static bool Store(IReadOnlyList<Inventory> outputs, GameObject prefab, int amount)
+    {
+        if (amount <= 0) return false;
+        var item = prefab.GetComponent<ItemDrop>().m_itemData.Clone();
+        item.m_dropPrefab = prefab;
+        item.m_stack = amount;
+        item.m_worldLevel = (byte)Game.m_worldLevel;
+        foreach (var inventory in outputs)
+        {
+            if (inventory.CanAddItem(item)) return inventory.AddItem(item);
+        }
+        return false;
+    }
 
     // ---------------------------------------------------------------- collecting stray products
 
@@ -215,13 +307,6 @@ internal static class AutoStorage
     private static readonly AccessTools.FieldRef<ItemDrop, ZNetView> ItemView =
         AccessTools.FieldRefAccess<ItemDrop, ZNetView>("m_nview");
 
-    // Once a minute per linked piece, move its products lying within the collect radius into the chest. Products
-    // end up on the ground whenever the chest was full, open or unloaded at the moment they came out.
-    //
-    // No duplication: a drop is only touched while this peer owns its ZDO. Ownership is handed over only by the
-    // current owner (ItemDrop.RPC_RequestOwn), so exactly one peer can take it, the same rule vanilla pickup relies
-    // on; otherwise we request ownership and retry on the next sweep. The chest count is measured before and after
-    // adding, and the drop loses exactly what went in: destroyed when the whole stack fit, shrunk when only part did.
     // Cheap per-tick gate; the product list is only built by the caller when this says a sweep is due.
     private static bool CollectDue(ZNetView pieceView)
     {
@@ -233,7 +318,15 @@ internal static class AutoStorage
         return true;
     }
 
-    private static void CollectStrays(ZNetView pieceView, Inventory inventory, IEnumerable<ItemDrop?> products)
+    // Once a minute per piece with output chests, move items of the kinds it makes lying within the collect radius
+    // into those chests. Products end up on the ground whenever the chests were full, open or unloaded at the moment
+    // they came out.
+    //
+    // No duplication: a drop is only touched while this peer owns its ZDO. Ownership is handed over only by the
+    // current owner (ItemDrop.RPC_RequestOwn), so exactly one peer can take it, the same rule vanilla pickup relies
+    // on; otherwise we request ownership and retry on the next sweep. Each chest's count is measured before and after
+    // adding, and the drop loses exactly what went in: destroyed when the whole stack fit, shrunk when only part did.
+    private static void CollectStrays(ZNetView pieceView, IReadOnlyList<Inventory> outputs, IEnumerable<ItemDrop?> products)
     {
         var names = new HashSet<string>(products.Where(product => product != null).Select(product => product!.m_itemData.m_shared.m_name));
         if (names.Count == 0) return;
@@ -253,11 +346,18 @@ internal static class AutoStorage
 
             drop.Load();
             var stack = drop.m_itemData.m_stack;
-            var before = inventory.CountItems(name, matchWorldLevel: false);
-            inventory.AddItem(drop.m_itemData.Clone());
-            var added = inventory.CountItems(name, matchWorldLevel: false) - before;
-            if (added >= stack) ZNetScene.instance.Destroy(drop.gameObject);
-            else if (added > 0) drop.SetStack(stack - added);
+            var left = stack;
+            foreach (var inventory in outputs)
+            {
+                var item = drop.m_itemData.Clone();
+                item.m_stack = left;
+                var before = inventory.CountItems(name, matchWorldLevel: false);
+                inventory.AddItem(item);
+                left -= inventory.CountItems(name, matchWorldLevel: false) - before;
+                if (left <= 0) break;
+            }
+            if (left <= 0) ZNetScene.instance.Destroy(drop.gameObject);
+            else if (left < stack) drop.SetStack(left);
         }
     }
 
@@ -279,28 +379,32 @@ internal static class AutoStorage
         {
             var nview = SmelterView(__instance);
             if (nview == null) return;
-            var inventory = WritableInventory(nview);
-            if (inventory == null) return;
-            var zdo = nview.GetZDO();
-            if (CollectDue(nview)) CollectStrays(nview, inventory, __instance.m_conversion.Select(conversion => conversion.m_to));
+            var outputs = LinkedInventories(nview, Direction.Output);
+            if (outputs.Count > 0 && CollectDue(nview))
+            {
+                CollectStrays(nview, outputs, __instance.m_conversion.Select(conversion => conversion.m_to));
+            }
 
+            var inputs = LinkedInventories(nview, Direction.Input);
+            if (inputs.Count == 0) return;
+            var zdo = nview.GetZDO();
             if (__instance.m_maxFuel > 0 && __instance.m_fuelItem != null)
             {
                 var fuel = zdo.GetFloat(ZDOVars.s_fuel);
-                while (fuel <= __instance.m_maxFuel - 1 && TakeOne(inventory, __instance.m_fuelItem)) fuel += 1f;
+                while (fuel <= __instance.m_maxFuel - 1 && TakeOne(inputs, __instance.m_fuelItem)) fuel += 1f;
                 zdo.Set(ZDOVars.s_fuel, fuel);
             }
 
             while (zdo.GetInt(ZDOVars.s_queued) < __instance.m_maxOre)
             {
-                var ore = SmelterFindCookable(__instance, inventory);
-                if (ore == null || !inventory.RemoveOneItem(ore)) return;
+                var ore = TakeCookable(inputs, __instance, SmelterFindCookable);
+                if (ore == null) return;
                 SmelterQueueOre(__instance, ore.m_dropPrefab.name, ore.m_cheated);
             }
         }
     }
 
-    // Single choke point for every smelter output path; falls back to the vanilla drop when the chest is full.
+    // Single choke point for every smelter output path; falls back to the vanilla drop when no output chest has room.
     [HarmonyPatch(typeof(Smelter), "Spawn")]
     private static class CollectSmelterOutput
     {
@@ -308,10 +412,10 @@ internal static class AutoStorage
         {
             var nview = SmelterView(__instance);
             if (nview == null) return true;
-            var inventory = WritableInventory(nview);
-            if (inventory == null) return true;
+            var outputs = LinkedInventories(nview, Direction.Output);
+            if (outputs.Count == 0) return true;
             var product = SmelterConversion(__instance, ore)?.m_to;
-            return product == null || !Store(inventory, product.gameObject, stack);
+            return product == null || !Store(outputs, product.gameObject, stack);
         }
     }
 
@@ -324,14 +428,14 @@ internal static class AutoStorage
 
     private static void CollectLevel(ZNetView nview, ItemDrop item)
     {
-        var inventory = WritableInventory(nview);
-        if (inventory == null) return;
+        var outputs = LinkedInventories(nview, Direction.Output);
+        if (outputs.Count == 0) return;
+        if (CollectDue(nview)) CollectStrays(nview, outputs, new[] { item });
         var zdo = nview.GetZDO();
-        if (CollectDue(nview)) CollectStrays(nview, inventory, new[] { item });
         var level = zdo.GetInt(ZDOVars.s_level);
         if (level <= 0) return;
         var amount = level * Game.instance.ScaleDrops(item.m_itemData, 1);
-        if (Store(inventory, item.gameObject, amount)) zdo.Set(ZDOVars.s_level, 0);
+        if (Store(outputs, item.gameObject, amount)) zdo.Set(ZDOVars.s_level, 0);
     }
 
     [HarmonyPatch(typeof(Beehive), "UpdateBees")]
@@ -379,36 +483,39 @@ internal static class AutoStorage
         {
             var nview = CookingView(__instance);
             if (nview == null) return;
-            var inventory = WritableInventory(nview);
-            if (inventory == null) return;
             var zdo = nview.GetZDO();
-            if (CollectDue(nview))
+            var outputs = LinkedInventories(nview, Direction.Output);
+            if (outputs.Count > 0)
             {
-                CollectStrays(nview, inventory, __instance.m_conversion.Select(conversion => conversion.m_to).Concat(new[] { __instance.m_overCookedItem }));
+                if (CollectDue(nview))
+                {
+                    CollectStrays(nview, outputs, __instance.m_conversion.Select(conversion => conversion.m_to).Concat(new[] { __instance.m_overCookedItem }));
+                }
+                for (var slot = 0; slot < __instance.m_slots.Length; slot++)
+                {
+                    var itemName = zdo.GetString("slot" + slot);
+                    if (itemName == "" || !CookingIsItemDone(__instance, itemName)) continue;
+                    var prefab = ObjectDB.instance.GetItemPrefab(itemName);
+                    if (prefab == null || !Store(outputs, prefab, 1)) continue;
+                    CookingSetSlot.Invoke(__instance, new object[] { slot, "", 0f, Enum.ToObject(CookingStatus, 0), false });
+                    nview.InvokeRPC(ZNetView.Everybody, "RPC_SetSlotVisual", slot, "");
+                }
             }
 
-            for (var slot = 0; slot < __instance.m_slots.Length; slot++)
-            {
-                var itemName = zdo.GetString("slot" + slot);
-                if (itemName == "" || !CookingIsItemDone(__instance, itemName)) continue;
-                var prefab = ObjectDB.instance.GetItemPrefab(itemName);
-                if (prefab == null || !Store(inventory, prefab, 1)) continue;
-                CookingSetSlot.Invoke(__instance, new object[] { slot, "", 0f, Enum.ToObject(CookingStatus, 0), false });
-                nview.InvokeRPC(ZNetView.Everybody, "RPC_SetSlotVisual", slot, "");
-            }
-
+            var inputs = LinkedInventories(nview, Direction.Input);
+            if (inputs.Count == 0) return;
             if (__instance.m_useFuel && __instance.m_fuelItem != null)
             {
                 var fuel = zdo.GetFloat(ZDOVars.s_fuel);
-                while (fuel <= __instance.m_maxFuel - 1 && TakeOne(inventory, __instance.m_fuelItem)) fuel += 1f;
+                while (fuel <= __instance.m_maxFuel - 1 && TakeOne(inputs, __instance.m_fuelItem)) fuel += 1f;
                 zdo.Set(ZDOVars.s_fuel, fuel);
             }
 
             if (__instance.m_requireFire && !CookingIsFireLit(__instance)) return;
             while (CookingFreeSlot(__instance) >= 0)
             {
-                var raw = CookingFindCookable(__instance, inventory);
-                if (raw == null || !inventory.RemoveOneItem(raw)) return;
+                var raw = TakeCookable(inputs, __instance, CookingFindCookable);
+                if (raw == null) return;
                 nview.InvokeRPC("RPC_AddItem", raw.m_dropPrefab.name, raw.m_cheated);
             }
         }
@@ -427,21 +534,25 @@ internal static class AutoStorage
         private static void Postfix(Fermenter __instance)
         {
             var nview = FermenterView(__instance);
-            if (nview == null) return;
-            var inventory = WritableInventory(nview);
-            if (inventory == null) return;
+            if (nview == null || !nview.IsValid()) return;
             var zdo = nview.GetZDO();
-            if (CollectDue(nview)) CollectStrays(nview, inventory, __instance.m_conversion.Select(conversion => conversion.m_to));
+            var outputs = LinkedInventories(nview, Direction.Output);
+            if (outputs.Count > 0 && CollectDue(nview))
+            {
+                CollectStrays(nview, outputs, __instance.m_conversion.Select(conversion => conversion.m_to));
+            }
 
             var content = zdo.GetInt(ZDOVars.s_content);
             if (content == 0)
             {
-                var raw = FermenterFindCookable(__instance, inventory);
-                if (raw == null || !inventory.RemoveOneItem(raw)) return;
-                nview.InvokeRPC("RPC_AddItem", raw.m_dropPrefab.name.GetStableHashCode(), raw.m_cheated);
+                // Asked for only while empty, so a barrel fermenting for 40 minutes doesn't keep pulling its input
+                // chests away from other players.
+                var raw = TakeCookable(LinkedInventories(nview, Direction.Input), __instance, FermenterFindCookable);
+                if (raw != null) nview.InvokeRPC("RPC_AddItem", raw.m_dropPrefab.name.GetStableHashCode(), raw.m_cheated);
                 return;
             }
 
+            if (outputs.Count == 0) return;
             var startTicks = zdo.GetLong(ZDOVars.s_startTime);
             if (startTicks == 0) return;
             var fermentedSeconds = (ZNet.instance.GetTime() - new DateTime(startTicks)).TotalSeconds;
@@ -450,7 +561,7 @@ internal static class AutoStorage
             foreach (var conversion in __instance.m_conversion)
             {
                 if (conversion.m_from == null || conversion.m_from.gameObject.name.GetStableHashCode() != content) continue;
-                if (!Store(inventory, conversion.m_to.gameObject, conversion.m_producedItems)) return;
+                if (!Store(outputs, conversion.m_to.gameObject, conversion.m_producedItems)) return;
                 zdo.Set(ZDOVars.s_content, 0);
                 zdo.Set(ZDOVars.s_startTime, 0L);
                 zdo.Set(ZDOVars.s_cheatedQueued, false);
@@ -462,19 +573,33 @@ internal static class AutoStorage
     // ---------------------------------------------------------------- hammer: linking
 
     private static ZNetView? _selectedPiece;
-    private static Piece? _linkPiece;
+    // The link tool held in the previous frame; switching tools drops the selection.
+    private static Direction? _toolInHand;
 
-    private static bool LinkToolSelected(Player player) =>
-        _linkPiece != null && player.InPlaceMode() && player.GetSelectedPiece() == _linkPiece;
+    private static Direction? HeldLinkTool(Player player)
+    {
+        if (!player.InPlaceMode()) return null;
+        var selected = player.GetSelectedPiece();
+        if (selected == null) return null;
+        if (selected == _inputTool) return Direction.Input;
+        if (selected == _outputTool) return Direction.Output;
+        return null;
+    }
 
-    private static ZNetView? LinkablePiece(GameObject hovered)
+    private static bool IsLinkTool(Piece? piece) => piece != null && (piece == _inputTool || piece == _outputTool);
+
+    // Beehives and sap collectors only make products, so they have no inputs to link.
+    private static ZNetView? LinkablePiece(GameObject hovered, Direction direction)
     {
         if (hovered.GetComponentInParent<SiegeMachine>() != null) return null;
         Component? piece = hovered.GetComponentInParent<Smelter>();
-        piece ??= hovered.GetComponentInParent<Beehive>();
-        piece ??= hovered.GetComponentInParent<SapCollector>();
         piece ??= hovered.GetComponentInParent<CookingStation>();
         piece ??= hovered.GetComponentInParent<Fermenter>();
+        if (direction == Direction.Output)
+        {
+            piece ??= hovered.GetComponentInParent<Beehive>();
+            piece ??= hovered.GetComponentInParent<SapCollector>();
+        }
         return piece == null ? null : piece.GetComponentInParent<ZNetView>();
     }
 
@@ -484,13 +609,23 @@ internal static class AutoStorage
         return container != null && Chests.Contains(container) && container.GetComponent<Piece>().IsPlacedByPlayer() ? container : null;
     }
 
-    private static void SetLink(ZNetView piece, Vector3 chestPosition)
+    // Vanilla Container.Interact's rules: a private chest only for its builder, a chest that checks wards only for
+    // players the ward lets in.
+    private static bool CanOpen(Player player, Container chest)
     {
-        piece.ClaimOwnership();
-        piece.GetZDO().Set(LinkKey, chestPosition);
+        if (!CraftFromContainers.HasAccess(chest, player.GetPlayerID()))
+        {
+            player.Message(MessageHud.MessageType.Center, "$msg_cantopen");
+            return false;
+        }
+        if (!chest.m_checkGuardStone || PrivateArea.CheckAccess(chest.transform.position)) return true;
+        player.Message(MessageHud.MessageType.Center, "$msg_privatezone");
+        return false;
     }
 
-    private static void HandleHammerClick(Player player)
+    private static string Kind(Direction direction) => direction == Direction.Input ? "input" : "output";
+
+    private static void HandleHammerClick(Player player, Direction direction)
     {
         // In build mode the player has no hover object; the hammer's hovered piece is the one it highlights.
         var hoveredPiece = player.GetHoveringPiece();
@@ -500,21 +635,11 @@ internal static class AutoStorage
         var chest = HoveredChest(hovered);
         if (chest != null)
         {
+            if (!CanOpen(player, chest)) return;
             var chestPosition = chest.transform.position;
             if (_selectedPiece == null || !_selectedPiece.IsValid())
             {
-                var unlinked = 0;
-                var pieces = new List<Piece>();
-                Piece.GetAllPiecesInRadius(chestPosition, _maxLinkDistance.Value, pieces);
-                foreach (var candidate in pieces)
-                {
-                    var view = candidate.GetComponentInParent<ZNetView>();
-                    if (view == null || !view.IsValid()) continue;
-                    if (Vector3.Distance(view.GetZDO().GetVec3(LinkKey, Vector3.zero), chestPosition) > ChestMatchRadius) continue;
-                    SetLink(view, Vector3.zero);
-                    unlinked++;
-                }
-                player.Message(MessageHud.MessageType.Center, unlinked == 0 ? "Nothing linked to this chest" : $"Unlinked {unlinked} piece(s)");
+                UnlinkFromEveryPiece(player, chestPosition, direction);
                 return;
             }
 
@@ -525,16 +650,19 @@ internal static class AutoStorage
                 player.Message(MessageHud.MessageType.Center, $"Too far, max {_maxLinkDistance.Value:0} m");
                 return;
             }
-            var alreadyLinked = Vector3.Distance(selected.GetZDO().GetVec3(LinkKey, Vector3.zero), chestPosition) <= ChestMatchRadius;
-            SetLink(selected, alreadyLinked ? Vector3.zero : chestPosition);
-            player.Message(MessageHud.MessageType.Center, alreadyLinked ? "Unlinked" : "Linked");
+            var positions = ReadChestPositions(selected.GetZDO(), direction) ?? new List<Vector3>();
+            var unlinked = RemoveChest(positions, chestPosition);
+            if (!unlinked) positions.Add(chestPosition);
+            WriteChestPositions(selected, direction, positions);
+            player.Message(MessageHud.MessageType.Center, unlinked ? $"Unlinked {Kind(direction)} chest" : $"Linked {Kind(direction)} chest");
             return;
         }
 
-        var piece = LinkablePiece(hovered);
+        var piece = LinkablePiece(hovered, direction);
         if (piece == null || !piece.IsValid())
         {
-            player.Message(MessageHud.MessageType.Center, "Not a processing piece or chest");
+            var takesNoInput = direction == Direction.Input && LinkablePiece(hovered, Direction.Output) != null;
+            player.Message(MessageHud.MessageType.Center, takesNoInput ? "This piece takes no input" : "Not a processing piece or chest");
             return;
         }
         if (_selectedPiece == piece)
@@ -543,21 +671,44 @@ internal static class AutoStorage
             player.Message(MessageHud.MessageType.Center, "Selection cleared");
             return;
         }
+        if (!PrivateArea.CheckAccess(piece.transform.position))
+        {
+            player.Message(MessageHud.MessageType.Center, "$msg_privatezone");
+            return;
+        }
         _selectedPiece = piece;
-        player.Message(MessageHud.MessageType.Center, "Selected, now click a chest");
+        player.Message(MessageHud.MessageType.Center, $"Selected, now click its {Kind(direction)} chest");
+    }
+
+    private static void UnlinkFromEveryPiece(Player player, Vector3 chestPosition, Direction direction)
+    {
+        var unlinked = 0;
+        var pieces = new List<Piece>();
+        Piece.GetAllPiecesInRadius(chestPosition, _maxLinkDistance.Value, pieces);
+        foreach (var candidate in pieces)
+        {
+            var view = candidate.GetComponentInParent<ZNetView>();
+            if (view == null || !view.IsValid()) continue;
+            var positions = ReadChestPositions(view.GetZDO(), direction);
+            if (positions == null || !RemoveChest(positions, chestPosition)) continue;
+            WriteChestPositions(view, direction, positions);
+            unlinked++;
+        }
+        player.Message(MessageHud.MessageType.Center,
+            unlinked == 0 ? $"No piece uses this chest as {Kind(direction)}" : $"Unlinked {unlinked} piece(s) from this {Kind(direction)} chest");
     }
 
     private static readonly AccessTools.FieldRef<Player, GameObject?> PlacementGhost =
         AccessTools.FieldRefAccess<Player, GameObject?>("m_placementGhost");
 
     // Without a ghost vanilla's place branch does nothing: no cost, stamina, durability or effects. Not gated on
-    // the config: the Link piece must never be placeable.
+    // the config: the link tools must never be placeable.
     [HarmonyPatch(typeof(Player), "SetupPlacementGhost")]
     private static class NoLinkGhost
     {
         private static bool Prefix(Player __instance)
         {
-            if (_linkPiece == null || __instance.GetSelectedPiece() != _linkPiece) return true;
+            if (!IsLinkTool(__instance.GetSelectedPiece())) return true;
             ref var ghost = ref PlacementGhost(__instance);
             if (ghost != null) UnityEngine.Object.Destroy(ghost);
             ghost = null;
@@ -571,7 +722,9 @@ internal static class AutoStorage
     {
         private static void Postfix(Player __instance, bool takeInput)
         {
-            if (__instance != Player.m_localPlayer || !takeInput || __instance.IsDead() || !LinkToolSelected(__instance)) return;
+            if (__instance != Player.m_localPlayer || !takeInput || __instance.IsDead()) return;
+            var tool = HeldLinkTool(__instance);
+            if (tool == null) return;
             if (Hud.IsPieceSelectionVisible() || Hud.InRadial() || ZInput.GetButton("JoyAltKeys")) return;
             if (!ZInput.GetButtonDown("Attack") && !ZInput.GetButtonDown("JoyPlace")) return;
             if (!_enabled.Value)
@@ -579,17 +732,18 @@ internal static class AutoStorage
                 __instance.Message(MessageHud.MessageType.Center, "AutoStorage is disabled in the config");
                 return;
             }
-            HandleHammerClick(__instance);
+            HandleHammerClick(__instance, tool.Value);
         }
     }
 
-    // The Link piece can't be built, so it must not count towards the "build every piece" achievement.
+    // The link tools can't be built, so they must not count towards the "build every piece" achievement.
     [HarmonyPatch(typeof(ObjectDB), nameof(ObjectDB.GetAllBuildPieces))]
-    private static class HideLinkFromAchievement
+    private static class HideLinkToolsFromAchievement
     {
         private static void Postfix(List<Piece> __result)
         {
-            if (_linkPiece != null) __result.Remove(_linkPiece);
+            if (_inputTool != null) __result.Remove(_inputTool);
+            if (_outputTool != null) __result.Remove(_outputTool);
         }
     }
 
@@ -625,7 +779,7 @@ internal static class AutoStorage
         }
         if (old.Count > 0)
         {
-            player.Message(MessageHud.MessageType.Center, "AutoStorage Hammer refunded, use AutoStorage Link (Hammer > Misc)");
+            player.Message(MessageHud.MessageType.Center, "AutoStorage Hammer refunded, use AutoStorage Link input/output (Hammer > Misc)");
         }
     }
 
@@ -644,7 +798,10 @@ internal static class AutoStorage
         ItemDrop.DropItem(data, data.m_stack, t.position + t.forward + t.up, t.rotation);
     }
 
-    // ---------------------------------------------------------------- link tool: lines
+    // ---------------------------------------------------------------- link tools: lines
+
+    private static readonly Color InputLineColor = new(0.25f, 0.55f, 1f);
+    private static readonly Color OutputLineColor = Color.green;
 
     private static readonly List<LineRenderer> Lines = new();
     private static readonly List<Piece> NearbyPieces = new();
@@ -664,10 +821,15 @@ internal static class AutoStorage
                 RefundOldHammers(__instance);
             }
 
-            var show = _enabled.Value && LinkToolSelected(__instance);
-            if (!show)
+            var tool = _enabled.Value ? HeldLinkTool(__instance) : null;
+            if (tool != _toolInHand)
             {
+                _toolInHand = tool;
                 _selectedPiece = null;
+                _nextLinkScan = 0f;
+            }
+            if (tool == null)
+            {
                 HideLines(0);
                 return;
             }
@@ -675,11 +837,12 @@ internal static class AutoStorage
             if (Time.time >= _nextLinkScan)
             {
                 _nextLinkScan = Time.time + 0.5f;
-                ScanLinks(__instance.transform.position);
+                ScanLinks(__instance.transform.position, tool.Value);
             }
 
             var count = 0;
-            for (var i = 0; i + 1 < LinkSegments.Count; i += 2) DrawLine(count++, LinkSegments[i], LinkSegments[i + 1], Color.green);
+            var color = tool == Direction.Input ? InputLineColor : OutputLineColor;
+            for (var i = 0; i + 1 < LinkSegments.Count; i += 2) DrawLine(count++, LinkSegments[i], LinkSegments[i + 1], color);
             if (_selectedPiece != null && _selectedPiece.IsValid())
             {
                 DrawLine(count++, _selectedPiece.transform.position + Vector3.up * 0.5f, __instance.transform.position + Vector3.up * 1.2f, Color.yellow);
@@ -688,7 +851,7 @@ internal static class AutoStorage
         }
     }
 
-    private static void ScanLinks(Vector3 around)
+    private static void ScanLinks(Vector3 around, Direction direction)
     {
         LinkSegments.Clear();
         NearbyPieces.Clear();
@@ -697,10 +860,13 @@ internal static class AutoStorage
         {
             var view = piece.GetComponentInParent<ZNetView>();
             if (view == null || !view.IsValid()) continue;
-            var target = view.GetZDO().GetVec3(LinkKey, Vector3.zero);
-            if (target == Vector3.zero) continue;
-            LinkSegments.Add(view.transform.position + Vector3.up * 0.5f);
-            LinkSegments.Add(target + Vector3.up * 0.5f);
+            var chests = ReadChestPositions(view.GetZDO(), direction);
+            if (chests == null) continue;
+            foreach (var chest in chests)
+            {
+                LinkSegments.Add(view.transform.position + Vector3.up * 0.5f);
+                LinkSegments.Add(chest + Vector3.up * 0.5f);
+            }
         }
     }
 
