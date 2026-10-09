@@ -238,7 +238,9 @@ Click a pin to travel there; close the map to stay. Portal tags and connections 
 per outpost is enough. Everything else stays vanilla: the same item restrictions (`$msg_noteleport`), the
 `NoPortals` / `NoBossPortals` world modifiers, the loading screen and the exit spot in front of the target portal.
 The map pins are temporary and never saved. They use their own portal icon, pulse gently, stay drawn above every
-other pin and ignore the map's icon filter. Because one portal now reaches every other, the portal and the stone
+other pin and ignore the map's icon filter. With `[World] PortalsOnMap` (default: on) the same portal pins are also
+shown every time you open the large map (M), so you always see where portals are; they don't pulse and clicking them
+does nothing, travel still starts by stepping into a portal. This works even with `PortalMapTravel` off. Because one portal now reaches every other, the portal and the stone
 portal cost more: `[World] PortalCostMultiplier` (default: 1.5, range 0.1-10) multiplies every material, rounded up,
 so the portal takes 30 fine wood, 15 greydwarf eyes and 3 surtling cores. Set it to 1 for vanilla prices. The new price
 applies to portals built from then on; destroying a portal refunds the price at the time the world loaded, so a portal
