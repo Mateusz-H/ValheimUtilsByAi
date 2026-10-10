@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.15
+
 - Fix: craft without roof, station extension range, station build range and breeding limit restore the vanilla value even when the game method they adjust fails (for example because of another mod), so turning them off always takes effect.
 - Fix: portal map travel closes the map once you move more than 5 m from the portal, so you can no longer step into a portal, walk off and travel from anywhere later.
 - Fix: craft and build from nearby containers no longer loses the materials of a craft that is running when the connection to the server drops; they go into your inventory.
