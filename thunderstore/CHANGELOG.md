@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.16
+
 - Fix: a chest another player opened and closed no longer keeps showing an open lid while you craft or build near it, or while an AutoStorage piece uses it.
 
 ## 0.0.15
