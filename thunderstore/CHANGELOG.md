@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Fix: a chest another player opened and closed no longer keeps showing an open lid while you craft or build near it, or while an AutoStorage piece uses it.
+
 ## 0.0.15
 
 - Fix: craft without roof, station extension range, station build range and breeding limit restore the vanilla value even when the game method they adjust fails (for example because of another mod), so turning them off always takes effect.
