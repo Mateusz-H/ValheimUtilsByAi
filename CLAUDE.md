@@ -27,6 +27,12 @@ Features may be client-side, server-side or both; each one says which in `thunde
 - Before writing a Harmony patch, decompile the target with `ilspycmd -t <Type> <path>/assembly_valheim.dll`
   and grep for every caller. Patch the shared method, not each caller.
 
+## Players
+
+The mod is played co-op with friends on a shared server, without wards for private bases. Ward and privacy
+bypasses (another player reaching into your base) are low priority: report them, don't fix them unless asked.
+Item loss, soft-locks and multiplayer desync still matter.
+
 ## Feature rules
 
 1. One file in `Features/`: a static class with `Bind(ConfigFile)` and its `[HarmonyPatch]` methods.
