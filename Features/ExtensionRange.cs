@@ -54,7 +54,7 @@ internal static class ExtensionRange
             }
         }
 
-        private static void Postfix(List<float>? __state)
+        private static void Finalizer(List<float>? __state)
         {
             if (__state == null) return;
             var extensions = AllExtensions;
@@ -73,7 +73,7 @@ internal static class ExtensionRange
             __instance.m_maxStationDistance = Mathf.Max(__state, _rangeMeters.Value);
         }
 
-        private static void Postfix(StationExtension __instance, float __state)
+        private static void Finalizer(StationExtension __instance, float __state)
         {
             __instance.m_maxStationDistance = __state;
         }

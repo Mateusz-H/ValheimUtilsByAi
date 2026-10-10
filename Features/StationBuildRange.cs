@@ -43,9 +43,11 @@ internal static class StationBuildRange
         __instance.m_rangeBuild = Mathf.Max(__state, _rangeMeters.Value);
     }
 
+    // A finalizer, not the postfix, so the vanilla range comes back even when the original throws.
+    private static void Finalizer(CraftingStation __instance, float __state) => __instance.m_rangeBuild = __state;
+
     private static void Postfix(CraftingStation __instance, float __state)
     {
-        __instance.m_rangeBuild = __state;
         // The timer is reset to 0 only on the call that recomputed the range.
         if (UpdateExtensionTimer(__instance) != 0f) return;
         var vanillaRange = __state + __instance.GetExtentionCount(checkExtensions: false) * __instance.m_extraRangePerLevel;

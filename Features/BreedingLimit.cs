@@ -40,7 +40,7 @@ internal static class BreedingLimit
             __instance.m_maxCreatures = _maxCreatures.Value;
         }
 
-        private static void Postfix(Procreation __instance, int __state)
+        private static void Finalizer(Procreation __instance, int __state)
         {
             __instance.m_maxCreatures = __state;
         }
