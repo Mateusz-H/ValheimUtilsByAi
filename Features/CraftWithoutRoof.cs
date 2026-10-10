@@ -17,7 +17,8 @@ internal static class CraftWithoutRoof
             "and without cover.");
     }
 
-    // The flag is restored in the postfix so toggling the setting at runtime takes effect immediately.
+    // The flag is restored in a finalizer, which runs even when CheckUsable throws, so toggling the setting at
+    // runtime takes effect immediately.
     [HarmonyPatch(typeof(CraftingStation), nameof(CraftingStation.CheckUsable))]
     private static class StationsWithoutRoof
     {
@@ -30,7 +31,7 @@ internal static class CraftWithoutRoof
             }
         }
 
-        private static void Postfix(CraftingStation __instance, bool __state) => __instance.m_craftRequireRoof = __state;
+        private static void Finalizer(CraftingStation __instance, bool __state) => __instance.m_craftRequireRoof = __state;
     }
 
     // Skipping vanilla also skips the owner restarting the fermentation timer while the barrel is exposed.
