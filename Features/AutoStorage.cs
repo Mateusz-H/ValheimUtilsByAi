@@ -291,7 +291,7 @@ internal static class AutoStorage
             var chestView = ContainerView(chest);
             if (chestView == null || !chestView.IsValid()) continue;
             if (!chestView.IsOwner()) { RequestOwnership(chest, chestView); continue; }
-            ContainerLoad(chest);
+            CraftFromContainers.LoadChest(chest);
             inventories.Add(chest.GetInventory());
         }
         return inventories;

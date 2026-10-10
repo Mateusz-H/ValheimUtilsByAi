@@ -148,8 +148,20 @@ internal static class CraftFromContainers
     // are always current.
     private static Inventory LoadedInventory(Container chest)
     {
-        ContainerLoad(chest);
+        LoadChest(chest);
         return chest.GetInventory();
+    }
+
+    private static readonly Action<Container> UpdateUseVisual =
+        AccessTools.MethodDelegate<Action<Container>>(AccessTools.Method(typeof(Container), "UpdateUseVisual"));
+
+    // Load only reports new data once per data revision, and CheckForChanges redraws the lid only when its own Load
+    // reports it. Loading here first used up the revision that carried a closed lid, so a chest another player
+    // closed kept showing open; redraw it the same way. An unchanged s_inUse is not written, so this never bumps the
+    // revision. AutoStorage loads its chests through this too.
+    internal static void LoadChest(Container chest)
+    {
+        if (ContainerLoad(chest)) UpdateUseVisual(chest);
     }
 
     private static bool HoldsAny(Inventory inventory, Piece.Requirement[] requirements)
