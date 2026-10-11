@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Liked items: like a stack with Alt + right click instead of Alt + left click, which MyLittleUI uses to post the item in chat.
+
 ## 0.0.18
 
 - Larger crafting station build range: the default is now 100 m (was 40 m) and the maximum 128 m (was 64 m). An existing config keeps its value; set `StationBuildRangeMeters` to change it.

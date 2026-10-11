@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace ValheimUtilsByAi.Features;
 
-// Alt + left click on an item in the inventory or in an open chest likes (or unlikes) that stack. The like lives in
+// Alt + right click on an item in the inventory or in an open chest likes (or unlikes) that stack. The like lives in
 // the item's m_customData: the game saves, clones and syncs it with the item, death moves the same objects into the
 // tombstone, and players without the mod keep it untouched.
 //
@@ -41,7 +41,7 @@ internal static class LikedItems
             "Inventory",
             "LikedItems",
             true,
-            "Alt + left click on an item likes it (gold border); click again to unlike. In your inventory quick " +
+            "Alt + right click on an item likes it (gold border); click again to unlike. In your inventory quick " +
             "stack, store all, sort and trash leave a liked stack alone. In a chest a liked stack always keeps at " +
             "least one item when crafting from chests, AutoStorage or restock take from it, so quick stack keeps " +
             "finding that chest. When this is off no item counts as liked; the likes are kept.");
@@ -129,23 +129,23 @@ internal static class LikedItems
         return container != null && container.GetInventory() == inventory && container.GetComponent<TombStone>() != null;
     }
 
-    // ---------------------------------------------------------------- Alt + click
+    // ---------------------------------------------------------------- Alt + right click
 
-    // OnLeftDown runs before vanilla reads Shift or Ctrl, so an AltGr click (reported as Ctrl + Alt) never becomes a
-    // quick move. A running drag is left to vanilla.
-    [HarmonyPatch(typeof(InventoryGrid), "OnLeftDown")]
+    // A right click otherwise uses the item (eat, equip). Alt + left click is left to other mods, such as MyLittleUI's
+    // chat item links. A running drag is left to vanilla.
+    [HarmonyPatch(typeof(InventoryGrid), "OnRightDown")]
     private static class ToggleOnAltClick
     {
-        private static bool Prefix(InventoryGrid __instance, UIInputHandler clickHandler)
+        private static bool Prefix(InventoryGrid __instance, UIInputHandler element)
         {
             if (!_enabled.Value || !(ZInput.GetKey(KeyCode.LeftAlt) || ZInput.GetKey(KeyCode.RightAlt))) return true;
             var gui = InventoryGui.instance;
             var player = Player.m_localPlayer;
             if (gui == null || player == null || player.IsTeleporting() || DragGo(gui) != null) return true;
             var inventory = __instance.GetInventory();
-            var element = clickHandler.GetComponent<InventoryElement>();
-            if (inventory == null || element == null || InTombstone(gui, inventory)) return true;
-            var item = inventory.GetItemAt(element.Position.x, element.Position.y);
+            var slot = element.GetComponent<InventoryElement>();
+            if (inventory == null || slot == null || InTombstone(gui, inventory)) return true;
+            var item = inventory.GetItemAt(slot.Position.x, slot.Position.y);
             if (item == null) return true;
             if (IsLiked(inventory, item)) Unlike(item);
             else item.m_customData[Key] = IsPlayerInventory(inventory) ? InInventory : InChest;

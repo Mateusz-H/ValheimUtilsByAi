@@ -348,8 +348,9 @@ Side: Client. Nobody else needs it.
 
 ### Liked items (`[Inventory] LikedItems`, default: on)
 
-Alt + left click on an item in your inventory or in an open chest likes that stack: it gets a gold border and a line
-in its tooltip. Alt + left click again unlikes it.
+Alt + right click on an item in your inventory or in an open chest likes that stack: it gets a gold border and a line
+in its tooltip. Alt + right click again unlikes it. Alt + left click stays free for other mods, such as MyLittleUI's
+chat item links.
 
 - In your inventory a liked stack is left alone by quick stack, store all, sort (it keeps its slot) and the trash can.
 - In a chest a liked stack always keeps at least one item: crafting and building from nearby chests, AutoStorage
