@@ -44,6 +44,7 @@ public sealed class Plugin : BaseUnityPlugin
         Restock.Bind(Config);
         SortItems.Bind(Config);
         TrashItems.Bind(Config);
+        BiggerChests.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }

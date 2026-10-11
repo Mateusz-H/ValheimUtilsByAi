@@ -427,6 +427,24 @@ inventory first.
 
 Side: Client. Nobody else needs the mod.
 
+### Bigger chests (`[Inventory] BiggerChests`, default: on)
+
+Chests get more rows, so each one holds more: their vanilla rows times `[Inventory] BiggerChestsRowMultiplier`
+(default 2, max 5). With the default a chest is 5x4 instead of 5x2, a reinforced chest 6x8 instead of 6x4, a black
+metal chest 8x8, a grausten chest 8x10, a barrel 6x4 and a personal chest 3x4. The panel scrolls when the rows don't
+fit, as it does for the vanilla wardrobe. `[Inventory] BiggerChestsPrefabs` lists the containers that grow
+(comma-separated prefab names, default the six chests above); the wardrobe (`piece_chest_warderobe`), carts (`Cart`)
+and ships (`Karve`, `VikingShip`, ...) can be added. Items in a cart still slow it down as in vanilla, but the crates
+shown on a cart count the added rows, so a cart filled to its vanilla size looks half loaded. Columns, stack sizes,
+the tombstone and every container not listed stay vanilla.
+
+Nothing is lost when a chest gets smaller again. Turning the feature off, lowering the multiplier, removing the mod
+or opening the chest in a game without it keeps every row down to the last one that holds an item, as vanilla already
+does for its own chests; only the empty rows below it disappear until the feature adds them back.
+
+Side: Client. Each game sizes chests for itself, so the server doesn't need the mod. A player without it sees a
+bigger chest down to its last filled row and can take everything out, but can't use the empty rows below that.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
