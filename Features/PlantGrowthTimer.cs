@@ -22,7 +22,8 @@ internal static class PlantGrowthTimer
             "World",
             "PlantGrowthTimer",
             true,
-            "Hovering a sapling or a planted bush shows how long until it grows (or regrows its harvest).");
+            Plugin.Synced(
+                "Hovering a sapling or a planted bush shows how long until it grows (or regrows its harvest)."));
     }
 
     private static string Remaining(double seconds)

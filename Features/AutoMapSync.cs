@@ -37,9 +37,10 @@ internal static class AutoMapSync
             "World",
             "AutoMapSync",
             true,
-            "All players share one map: explored areas and pins are merged on the server and passed on to everyone, " +
-            "no cartography table needed. Your map is sent when you join and then at most every 5 minutes, only " +
-            "after you explored something or changed your own pins.");
+            Plugin.Synced(
+                "All players share one map: explored areas and pins are merged on the server and passed on to " +
+                "everyone, no cartography table needed. Your map is sent when you join and then at most every 5 " +
+                "minutes, only after you explored something or changed your own pins."));
         _enabled.SettingChanged += (_, _) => ResetClient(); // switched back on: upload and fetch the shared map again
         _rpc = NetworkManager.Instance.AddRPC("ValheimUtilsByAi.AutoMapSync", OnServerReceive, OnClientReceive);
     }

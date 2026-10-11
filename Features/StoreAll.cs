@@ -19,8 +19,9 @@ internal static class StoreAll
             "Inventory",
             "StoreAll",
             true,
-            "Adds a Store all button to chests: everything in your inventory goes into the open chest, except the " +
-            "hotbar, equipped and liked items.");
+            Plugin.Synced(
+                "Adds a Store all button to chests: everything in your inventory goes into the open chest, except " +
+                "the hotbar, equipped and liked items."));
         _key = config.Bind("Inventory", "StoreAllKey", KeyboardShortcut.Empty,
             "Optional key for Store all while a chest is open. Unbound by default.");
 

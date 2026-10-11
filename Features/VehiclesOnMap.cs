@@ -35,7 +35,8 @@ internal static class VehiclesOnMap
             "World",
             "VehiclesOnMap",
             true,
-            "Every cart and ship in the world is shown on the map and minimap with a small icon, wherever it is.");
+            Plugin.Synced(
+                "Every cart and ship in the world is shown on the map and minimap with a small icon, wherever it is."));
         _enabled.SettingChanged += (_, _) =>
         {
             if (!_enabled.Value) ClearPins();

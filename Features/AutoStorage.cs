@@ -41,26 +41,29 @@ internal static class AutoStorage
             "Crafting",
             "AutoStorage",
             true,
-            "Adds the AutoStorage Link input and AutoStorage Link output hammer tools. A processing piece (kiln, " +
-            "smelter, blast furnace, spinning wheel, windmill, eitr refinery, frigid kiln, hot tub, beehive, birds' " +
-            "nest, sap extractor, cooking stations, frost foundry, fermenter) takes its inputs from the chests linked " +
-            "as its input and puts its products into the chests linked as its output; one chest can be both. " +
-            "When this is off the automation and linking stop; links are kept. In multiplayer the setting of the game " +
-            "that controls the piece applies.");
+            Plugin.Synced(
+                "Adds the AutoStorage Link input and AutoStorage Link output hammer tools. A processing piece (kiln, " +
+                "smelter, blast furnace, spinning wheel, windmill, eitr refinery, frigid kiln, hot tub, beehive, " +
+                "birds' nest, sap extractor, cooking stations, frost foundry, fermenter) takes its inputs from the " +
+                "chests linked as its input and puts its products into the chests linked as its output; one chest " +
+                "can be both. When this is off the automation and linking stop; links are kept. In multiplayer the " +
+                "setting of the game that controls the piece applies."));
         _maxLinkDistance = config.Bind(
             "Crafting",
             "AutoStorageMaxLinkDistance",
             100f,
-            "Maximum distance in meters between a piece and a chest linked to it. " +
-            "Pieces farther than roughly 64 m from any player are not simulated by the game, so a chest beyond " +
-            "that distance from the piece may simply not be loaded.");
+            Plugin.Synced(
+                "Maximum distance in meters between a piece and a chest linked to it. Pieces farther than roughly 64 " +
+                "m from any player are not simulated by the game, so a chest beyond that distance from the piece may " +
+                "simply not be loaded."));
         _collectRadius = config.Bind(
             "Crafting",
             "AutoStorageCollectRadius",
             5f,
-            "Once a minute, items of the kinds a linked piece makes lying on the ground within this many meters of it " +
-            "(for example because its output chests were full or open) are moved into its output chests. " +
-            "0 turns this off.");
+            Plugin.Synced(
+                "Once a minute, items of the kinds a linked piece makes lying on the ground within this many meters " +
+                "of it (for example because its output chests were full or open) are moved into its output chests. 0 " +
+                "turns this off."));
 
         PrefabManager.OnVanillaPrefabsAvailable += RegisterPrefabs;
     }

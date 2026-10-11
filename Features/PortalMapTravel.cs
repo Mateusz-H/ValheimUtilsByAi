@@ -54,13 +54,14 @@ internal static class PortalMapTravel
             "World",
             "PortalMapTravel",
             true,
-            "Stepping into a portal opens the map with a pin for every portal in the world. Click a pin to travel " +
-            "there; close the map to stay. Portal tags no longer matter.");
+            Plugin.Synced(
+                "Stepping into a portal opens the map with a pin for every portal in the world. Click a pin to " +
+                "travel there; close the map to stay. Portal tags no longer matter."));
         _costMultiplier = config.Bind(
             "World",
             "PortalCostMultiplier",
             1.5f,
-            new ConfigDescription(
+            Plugin.Synced(
                 "While PortalMapTravel is on, every material of the portal and stone portal costs this many times " +
                 "the vanilla amount, rounded up. 1 keeps vanilla prices.",
                 new AcceptableValueRange<float>(0.1f, 10f)));
@@ -68,8 +69,9 @@ internal static class PortalMapTravel
             "World",
             "PortalsOnMap",
             true,
-            "Every portal in the world is shown on the large map (M) all the time, not only when stepping into one. " +
-            "These pins are for viewing; travel still starts at a portal.");
+            Plugin.Synced(
+                "Every portal in the world is shown on the large map (M) all the time, not only when stepping into " +
+                "one. These pins are for viewing; travel still starts at a portal."));
         _enabled.SettingChanged += (_, _) => ApplyCost();
         _costMultiplier.SettingChanged += (_, _) => ApplyCost();
         PrefabManager.OnVanillaPrefabsAvailable += FindPortalPieces;

@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Server config sync: on a server running the mod, every setting except keys and the main-menu mod list comes from the server's config for all players; your own file applies again on disconnect, in single player and on servers without the mod.
+
 - Liked items: like a stack with Alt + right click instead of Alt + left click, which MyLittleUI uses to post the item in chat.
 - Sort items, quick stack and store all leave the rows other mods add below your inventory alone, such as Better Archery's quiver: sorting no longer empties the quiver or hides items in its hidden row, and quick stack no longer sends quiver arrows to chests.
 - Trash can: equipped gear can't be trashed; unequip it first. Trashing an equipped Better Archery quiver hid the arrows in it.

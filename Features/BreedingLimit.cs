@@ -18,13 +18,14 @@ internal static class BreedingLimit
             "World",
             "BreedingLimit",
             true,
-            "Tamed animals keep breeding until BreedingLimitCount animals of their kind (adults and young) stand " +
-            "within 10 m, instead of the handful vanilla allows.");
+            Plugin.Synced(
+                "Tamed animals keep breeding until BreedingLimitCount animals of their kind (adults and young) stand " +
+                "within 10 m, instead of the handful vanilla allows."));
         _maxCreatures = config.Bind(
             "World",
             "BreedingLimitCount",
             20,
-            new ConfigDescription(
+            Plugin.Synced(
                 "How many animals of one kind, adults and young together, may stand within 10 m before tamed " +
                 "animals of that kind stop breeding. Vanilla allows only a handful, set per animal.",
                 new AcceptableValueRange<int>(1, 100)));

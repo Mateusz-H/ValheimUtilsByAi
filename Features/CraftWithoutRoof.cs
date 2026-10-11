@@ -13,8 +13,9 @@ internal static class CraftWithoutRoof
             "Crafting",
             "CraftWithoutRoof",
             true,
-            "Crafting stations (workbench, forge, ...), fermenters, spinning wheels and beds work without a roof " +
-            "and without cover.");
+            Plugin.Synced(
+                "Crafting stations (workbench, forge, ...), fermenters, spinning wheels and beds work without a roof " +
+                "and without cover."));
     }
 
     // The flag is restored in a finalizer, which runs even when CheckUsable throws, so toggling the setting at
