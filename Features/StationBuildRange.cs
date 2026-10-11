@@ -23,13 +23,14 @@ internal static class StationBuildRange
             "Building",
             "StationBuildRange",
             true,
-            "You can build up to StationBuildRangeMeters from a workbench, forge or other crafting station " +
-            "instead of their vanilla 20 m (artisan table 40 m).");
+            Plugin.Synced(
+                "You can build up to StationBuildRangeMeters from a workbench, forge or other crafting station " +
+                "instead of their vanilla 20 m (artisan table 40 m)."));
         _rangeMeters = config.Bind(
             "Building",
             "StationBuildRangeMeters",
             100f,
-            new ConfigDescription(
+            Plugin.Synced(
                 "Build range of every crafting station, in meters, before any bonus from station upgrades. Vanilla " +
                 "is 20 (artisan table 40); this setting never shrinks a range. Only stations the game has loaded " +
                 "count: the default Simulation Distance loads at least 128 m around you, the lowest only 64 m.",

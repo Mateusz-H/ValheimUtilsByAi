@@ -24,8 +24,9 @@ internal static class SortItems
             "Inventory",
             "SortItems",
             true,
-            "SortKey (or the S button under your weight) sorts your inventory by kind and name and merges partial " +
-            "stacks; with a chest open it sorts the chest. The hotbar and liked items keep their slots.");
+            Plugin.Synced(
+                "SortKey (or the S button under your weight) sorts your inventory by kind and name and merges " +
+                "partial stacks; with a chest open it sorts the chest. The hotbar and liked items keep their slots."));
         _key = config.Bind("Inventory", "SortKey", new KeyboardShortcut(KeyCode.O),
             "Key for sorting. Works while the inventory is open.");
 

@@ -33,7 +33,7 @@ internal static class $name
             "$section",
             "$name",
             true,
-            "TODO one or two sentences a player understands.");
+            Plugin.Synced("TODO one or two sentences a player understands."));
     }
 
     // TODO: read _enabled.Value on every call; if game state must change for the call, restore it in a postfix via __state.

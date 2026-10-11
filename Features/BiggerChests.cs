@@ -29,22 +29,24 @@ internal static class BiggerChests
             "Inventory",
             "BiggerChests",
             true,
-            "Chests listed in BiggerChestsPrefabs get more rows: their vanilla row count times " +
-            "BiggerChestsRowMultiplier. Turning it off keeps every row that still holds items.");
+            Plugin.Synced(
+                "Chests listed in BiggerChestsPrefabs get more rows: their vanilla row count times " +
+                "BiggerChestsRowMultiplier. Turning it off keeps every row that still holds items."));
         _rowMultiplier = config.Bind(
             "Inventory",
             "BiggerChestsRowMultiplier",
             2,
-            new ConfigDescription(
+            Plugin.Synced(
                 "Rows of a listed chest = vanilla rows x this. 2 makes a reinforced chest 6x8 instead of 6x4.",
                 new AcceptableValueRange<int>(1, 5)));
         _prefabs = config.Bind(
             "Inventory",
             "BiggerChestsPrefabs",
             "piece_chest_wood,piece_chest,piece_chest_blackmetal,piece_chest_grausten,piece_chest_barrel,piece_chest_private",
-            "Comma-separated prefab names of the containers that get more rows. Default: chest, reinforced chest, " +
-            "black metal chest, grausten chest, barrel, personal chest. Other containers work too, for example " +
-            "piece_chest_warderobe, Cart or VikingShip.");
+            Plugin.Synced(
+                "Comma-separated prefab names of the containers that get more rows. Default: chest, reinforced " +
+                "chest, black metal chest, grausten chest, barrel, personal chest. Other containers work too, for " +
+                "example piece_chest_warderobe, Cart or VikingShip."));
         ParsePrefabs();
         _enabled.SettingChanged += (_, _) => Refresh();
         _rowMultiplier.SettingChanged += (_, _) => Refresh();

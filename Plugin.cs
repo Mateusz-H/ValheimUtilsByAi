@@ -11,9 +11,18 @@ namespace ValheimUtilsByAi;
 [BepInDependency(Jotunn.Main.ModGuid)]
 // Jötunn refuses the connection, with its version window, when client and server both run this mod in different versions.
 [NetworkCompatibility(CompatibilityLevel.VersionCheckOnly, VersionStrictness.Patch)]
+// Synced settings follow the server only when it runs this mod; elsewhere every player keeps their own.
+[SynchronizationMode(AdminOnlyStrictness.IfOnServer)]
 public sealed class Plugin : BaseUnityPlugin
 {
     internal static ManualLogSource Log { get; private set; } = null!;
+
+    // Description of a setting the server decides for everyone: on a server running this mod Jötunn sends the
+    // server's value to each player on connect and on every change (SettingChanged fires as for a local edit), locks
+    // it for non-admins, and puts the player's own value back on disconnect. The player's config file is never
+    // overwritten. Keys and the main-menu mod list stay each player's own.
+    internal static ConfigDescription Synced(string description, AcceptableValueBase? acceptableValues = null) =>
+        new(description, acceptableValues, new ConfigurationManagerAttributes { IsAdminOnly = true });
 
     private void Awake()
     {

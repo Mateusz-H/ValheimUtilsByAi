@@ -19,13 +19,14 @@ internal static class FastCorpseDrop
             "Combat",
             "FastCorpseDrop",
             true,
-            "Dead creatures vanish and drop their loot after FastCorpseDropSeconds instead of lying around for " +
-            "several seconds. Player bodies and bosses keep the vanilla timing.");
+            Plugin.Synced(
+                "Dead creatures vanish and drop their loot after FastCorpseDropSeconds instead of lying around for " +
+                "several seconds. Player bodies and bosses keep the vanilla timing."));
         _seconds = config.Bind(
             "Combat",
             "FastCorpseDropSeconds",
             0.5f,
-            new ConfigDescription(
+            Plugin.Synced(
                 "Seconds a dead creature's body stays before it vanishes and drops loot. Never makes it slower than vanilla.",
                 new AcceptableValueRange<float>(0.1f, 10f)));
     }

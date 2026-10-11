@@ -37,13 +37,14 @@ internal static class FeedingTrough
             "World",
             "FeedingTrough",
             true,
-            "Adds the Feeding Trough chest. Hungry tamed animals walk to a nearby trough and eat food they like " +
-            "from it. The trough stays craftable when this is off; animals just stop using it.");
+            Plugin.Synced(
+                "Adds the Feeding Trough chest. Hungry tamed animals walk to a nearby trough and eat food they like " +
+                "from it. The trough stays craftable when this is off; animals just stop using it."));
         _range = config.Bind(
             "World",
             "FeedingTroughRange",
             15f,
-            new ConfigDescription(
+            Plugin.Synced(
                 "How far in meters a hungry tamed animal looks for a Feeding Trough.",
                 new AcceptableValueRange<float>(1f, 50f)));
 

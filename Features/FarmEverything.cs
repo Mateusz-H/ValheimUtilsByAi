@@ -64,9 +64,11 @@ internal static class FarmEverything
             "World",
             "FarmEverything",
             true,
-            "Uproot wild berry bushes, mushrooms, thistle, dandelions and fiddlehead with the Cultivator (Remove button) to get " +
-            "seeds, and plant them on cultivated ground with the Cultivator. Planted ones regrow slower than wild " +
-            "ones; minutes per plant are set below. Off: no uprooting, pieces hidden; planted ones keep growing.");
+            Plugin.Synced(
+                "Uproot wild berry bushes, mushrooms, thistle, dandelions and fiddlehead with the Cultivator (Remove " +
+                "button) to get seeds, and plant them on cultivated ground with the Cultivator. Planted ones regrow " +
+                "slower than wild ones; minutes per plant are set below. Off: no uprooting, pieces hidden; planted " +
+                "ones keep growing."));
         _enabled.SettingChanged += (_, _) =>
         {
             foreach (var plant in Plants.Values) plant.Piece.m_enabled = _enabled.Value;
@@ -111,7 +113,7 @@ internal static class FarmEverything
                 "World",
                 $"FarmEverything{wildName}Minutes",
                 wildMinutes > 0f ? Mathf.RoundToInt(wildMinutes * 1.5f) : 360,
-                new ConfigDescription(
+                Plugin.Synced(
                     $"Minutes until a planted {wildName} grows its harvest, after planting and after each pick. " +
                     $"Wild ones take {wildMinutes:0}.",
                     // At 0 vanilla never schedules the regrowth, and destroys a picked plant that hides nothing.

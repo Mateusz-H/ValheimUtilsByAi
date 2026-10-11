@@ -6,6 +6,13 @@ Quality-of-life tweaks for Valheim. Every feature has its own switch in
 `BepInEx/config/mh.ValheimUtilsByAi.cfg` (generated on first launch). Each feature states
 whether it runs on the client, the server, or both.
 
+On a server that runs this mod, the server's config applies to every player: switches, ranges, multipliers and lists
+come from the server's `mh.ValheimUtilsByAi.cfg` when you connect and whenever it changes. Admins can change them in
+game with a configuration manager (F1); for everyone else they are locked while connected. Keys (quick stack, sort,
+trash, ...) and the main-menu mod list stay your own. Your own config file is never overwritten: on disconnect, in
+single player and on servers without the mod your own values apply. Edit the server's file while it is stopped, or
+restart it afterwards.
+
 ## Features
 
 ### Craft without roof (`[Crafting] CraftWithoutRoof`, default: on)
@@ -94,7 +101,7 @@ In multiplayer only the game that owns a chest edits it. A linked piece asks the
 waits until it does; the owner hands it over only while nobody has the chest open, so two players never write to the
 same chest at once. A player opening a chest always sees what the linked pieces put into it, even a moment before.
 The game that controls a piece (in multiplayer usually the first player who came near it) runs its automation with its
-own settings.
+settings, which are the server's when the server runs the mod.
 
 Links made with the single AutoStorage Link tool of 0.0.10 and earlier are removed: link those pieces again with Link
 input and Link output. The separate AutoStorage Hammer from earlier versions is gone: any copy in your inventory turns
@@ -274,8 +281,8 @@ portal currently just opens a map you cannot pick from, so turn the feature off 
 
 Side: Both. The client part works alone but only shows portals your game has already seen; with the mod on the
 server every portal in the world is listed. Other players without the mod keep vanilla portals. The build price is
-checked by each player's own game, so every player pays the price from their own config, and players without the mod
-pay the vanilla price.
+checked by each player's own game, so every player pays the price from their config (the server's when it runs the
+mod), and players without the mod pay the vanilla price.
 
 ### Farm everything (`[World] FarmEverything`, default: on)
 
@@ -290,8 +297,8 @@ starts bare (mushrooms, thistle, dandelion and fiddlehead as a small version of 
 thistle and dandelion, i.e. 1.5x the wild 300 / 240), then regrows at that pace after every pick. The harvest itself is
 vanilla. Uproot a planted one with the Cultivator to get its seed back; for planted berry bushes, hammer remove refunds
 it too. Unlike saplings, planted ones are never raid targets and grow in any biome without needing free space around
-them, and the minutes setting of their owner (the player whose game is simulating them) decides the regrow time. Wild
-plants and their respawn are untouched unless you uproot them.
+them, and the minutes setting of their owner (the player whose game is simulating them; the server's setting when it
+runs the mod) decides the regrow time. Wild plants and their respawn are untouched unless you uproot them.
 
 Side: Both. The mod (and Jötunn) must be installed on the server and on every client: the seeds and planted pieces are
 new prefabs, and players without them see errors. Turning the feature off stops uprooting and hides the pieces from the

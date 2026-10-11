@@ -37,7 +37,13 @@ Item loss, soft-locks and multiplayer desync still matter.
 ## Feature rules
 
 1. One file in `Features/`: a static class with `Bind(ConfigFile)` and its `[HarmonyPatch]` methods.
-2. Call `Bind` from `Plugin.Awake`.
+2. Call `Bind` from `Plugin.Awake`. Bind every setting with `Plugin.Synced(description, range)` so a server running
+   the mod decides it for all players (Jötunn admin-only sync, `[SynchronizationMode(IfOnServer)]` on `Plugin`);
+   only keys and the main-menu `ModVersions` toggle stay a plain per-player description. The server's values arrive
+   during the connection handshake, before the player spawns, and the player's own come back on disconnect while the
+   game scene is torn down: `SettingChanged` fires both times, so handlers must cope with no local player, map or
+   inventory UI. A value read only once (at bind or prefab registration) never follows the server; read `.Value`
+   on use or react in `SettingChanged`.
 3. Toggles must work at runtime. Never mutate game state permanently based on config; restore it in a postfix
    or check the config value on every call.
 4. Document the feature, its config key and its side (Client / Server / Both) in `thunderstore/README.md`,
