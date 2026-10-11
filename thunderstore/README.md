@@ -422,6 +422,16 @@ inventory first.
 
 Side: Client. Nobody else needs the mod.
 
+### Chest reach (`[Inventory] ChestReach`, default: on)
+
+Vanilla lets you open a chest from up to 5 m, measured from your eyes to the spot you look at, but closes it as soon as
+the middle of its base is more than 4 m from your feet. From the edge of reach, or at the top of a stack of chests,
+the chest closed again in the same frame, so its panel never showed. With this on, a chest stays open while any part
+of it is within reach, measured the same way as for opening, and closes once you are about 1 m beyond that. Walking
+away still closes it.
+
+Side: Client. Nobody else needs the mod.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires

@@ -6,7 +6,8 @@
 - Restock: L or a button fills partial stacks of ammo, food and potions from nearby chests.
 - Sort items: O or a button sorts the inventory or the open chest by kind and name and merges partial stacks; the hotbar and liked items keep their slots.
 - Trash can: destroy a dragged item with the trash can in the inventory panel or the Delete key, after a confirmation.
-- AutoStorage: a piece only asks for a chest another player's game holds when it has work for it (room for input that chest holds, or products and room for them), so idle pieces no longer pass shared chests back and forth every few seconds. A liked chest stack keeps its last item.
+- Chest reach: a chest opened from the edge of reach or at the top of a stack of chests now shows its panel instead of closing again at once.
+- AutoStorage: a piece only asks for a chest another player's game holds when it has work for it (room for input that chest holds, or products and room for them), so idle pieces no longer pass shared chests back and forth every few seconds. A chest a player is just opening is no longer handed to a piece, which could hide its panel. A liked chest stack keeps its last item.
 - Craft and build from nearby containers: a liked chest stack keeps its last item. A chest the game still marks as open after its user crashed is asked for again instead of being skipped (its owner still refuses while it really is open).
 
 ## 0.0.17
