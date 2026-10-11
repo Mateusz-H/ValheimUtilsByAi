@@ -38,12 +38,13 @@ internal static class AutoRepair
             "Crafting",
             "AutoRepair",
             true,
-            "Opening a crafting station repairs every item it can repair, without clicking the repair button.");
+            Plugin.Synced(
+                "Opening a crafting station repairs every item it can repair, without clicking the repair button."));
         _nearbyMeters = config.Bind(
             "Crafting",
             "AutoRepairNearbyMeters",
             15f,
-            new ConfigDescription(
+            Plugin.Synced(
                 "Crafting stations within this many meters of you also repair what they can when you open one, each " +
                 "with its vanilla rules (item, station level, roof, fire). 0 repairs only at the station you open.",
                 new AcceptableValueRange<float>(0f, 50f)));

@@ -56,17 +56,18 @@ internal static class QuickStack
             "Inventory",
             "QuickStack",
             true,
-            "QuickStackKey (or the Q button under your weight) puts stackable items from your inventory into nearby " +
-            "chests that already hold the same item, nearest first, and merges partial stacks there. With a chest " +
-            "open it, the Quick stack button and vanilla's Place stacks fill that chest only. The hotbar, equipped " +
-            "and liked items stay.");
+            Plugin.Synced(
+                "QuickStackKey (or the Q button under your weight) puts stackable items from your inventory into " +
+                "nearby chests that already hold the same item, nearest first, and merges partial stacks there. With " +
+                "a chest open it, the Quick stack button and vanilla's Place stacks fill that chest only. The " +
+                "hotbar, equipped and liked items stay."));
         _key = config.Bind("Inventory", "QuickStackKey", new KeyboardShortcut(KeyCode.P),
             "Key for quick stacking. Works with the inventory closed too.");
         _radius = config.Bind(
             "Inventory",
             "QuickStackRadius",
             10f,
-            new ConfigDescription("How far from you, in meters, a chest can be for quick stacking.",
+            Plugin.Synced("How far from you, in meters, a chest can be for quick stacking.",
                 new AcceptableValueRange<float>(1f, 50f)));
 
         AddMiniButton("VU_QuickStackArea", "Q", () => _enabled.Value && OpenChest() == null, StackNearby);

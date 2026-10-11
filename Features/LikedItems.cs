@@ -41,10 +41,11 @@ internal static class LikedItems
             "Inventory",
             "LikedItems",
             true,
-            "Alt + right click on an item likes it (gold border); click again to unlike. In your inventory quick " +
-            "stack, store all, sort and trash leave a liked stack alone. In a chest a liked stack always keeps at " +
-            "least one item when crafting from chests, AutoStorage or restock take from it, so quick stack keeps " +
-            "finding that chest. When this is off no item counts as liked; the likes are kept.");
+            Plugin.Synced(
+                "Alt + right click on an item likes it (gold border); click again to unlike. In your inventory quick " +
+                "stack, store all, sort and trash leave a liked stack alone. In a chest a liked stack always keeps " +
+                "at least one item when crafting from chests, AutoStorage or restock take from it, so quick stack " +
+                "keeps finding that chest. When this is off no item counts as liked; the likes are kept."));
     }
 
     private static string? Flag(ItemDrop.ItemData item) =>

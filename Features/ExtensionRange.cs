@@ -25,14 +25,15 @@ internal static class ExtensionRange
             "Building",
             "ExtensionRange",
             true,
-            "Extensions of the workbench, forge, black forge, artisan table, galdr table and cauldron (chopping " +
-            "block, tanning rack, bellows, ...) work from up to ExtensionRangeMeters away from the station instead " +
-            "of their vanilla 2-5 m, and can be placed that far away.");
+            Plugin.Synced(
+                "Extensions of the workbench, forge, black forge, artisan table, galdr table and cauldron (chopping " +
+                "block, tanning rack, bellows, ...) work from up to ExtensionRangeMeters away from the station " +
+                "instead of their vanilla 2-5 m, and can be placed that far away."));
         _rangeMeters = config.Bind(
             "Building",
             "ExtensionRangeMeters",
             10f,
-            new ConfigDescription(
+            Plugin.Synced(
                 "How far from a crafting station, in meters, an extension still upgrades it. Vanilla is 2-5 " +
                 "depending on the extension; this setting never shrinks a range.",
                 new AcceptableValueRange<float>(1f, 50f)));

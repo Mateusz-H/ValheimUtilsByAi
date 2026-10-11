@@ -22,15 +22,16 @@ internal static class Restock
             "Inventory",
             "Restock",
             true,
-            "RestockKey (or the R button under your weight) fills partial stacks of ammo, food and potions in your " +
-            "inventory from nearby chests; with a chest open, from that chest only.");
+            Plugin.Synced(
+                "RestockKey (or the R button under your weight) fills partial stacks of ammo, food and potions in " +
+                "your inventory from nearby chests; with a chest open, from that chest only."));
         _key = config.Bind("Inventory", "RestockKey", new KeyboardShortcut(KeyCode.L),
             "Key for restocking. Works with the inventory closed too.");
         _radius = config.Bind(
             "Inventory",
             "RestockRadius",
             10f,
-            new ConfigDescription("How far from you, in meters, a chest can be for restocking.",
+            Plugin.Synced("How far from you, in meters, a chest can be for restocking.",
                 new AcceptableValueRange<float>(1f, 50f)));
 
         QuickStack.AddMiniButton("VU_RestockArea", "R", () => _enabled.Value && QuickStack.OpenChest() == null, RestockNearby);

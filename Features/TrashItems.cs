@@ -34,9 +34,10 @@ internal static class TrashItems
             "Inventory",
             "TrashItems",
             true,
-            "Adds a trash can to the inventory panel. Click it while dragging an item from your inventory, or press " +
-            "TrashKey while dragging, to destroy that item after a confirmation. Liked items and equipped gear can't be " +
-            "trashed.");
+            Plugin.Synced(
+                "Adds a trash can to the inventory panel. Click it while dragging an item from your inventory, or " +
+                "press TrashKey while dragging, to destroy that item after a confirmation. Liked items and equipped " +
+                "gear can't be trashed."));
         _key = config.Bind("Inventory", "TrashKey", new KeyboardShortcut(KeyCode.Delete),
             "Key that trashes the item you are dragging.");
     }

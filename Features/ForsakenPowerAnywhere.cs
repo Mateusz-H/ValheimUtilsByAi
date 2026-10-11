@@ -40,8 +40,10 @@ internal static class ForsakenPowerAnywhere
             "Combat",
             "ForsakenPowerAnywhere",
             true,
-            "Adds a button to the Escape menu that switches your Forsaken power to the next one you already picked at " +
-            "a guardian stone, so you don't have to walk back to the stones. The cooldown and any running power are not affected.");
+            Plugin.Synced(
+                "Adds a button to the Escape menu that switches your Forsaken power to the next one you already " +
+                "picked at a guardian stone, so you don't have to walk back to the stones. The cooldown and any " +
+                "running power are not affected."));
     }
 
     // The button is a copy of Settings, created once per menu instance and shown or hidden on every Show.

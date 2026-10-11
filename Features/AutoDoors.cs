@@ -32,8 +32,9 @@ internal static class AutoDoors
             "Building",
             "AutoDoors",
             true,
-            "Doors and gates you build open by themselves when you walk up to them and close once you've walked through. " +
-            "Doors in dungeons, crypts and other places the game generated are left alone.");
+            Plugin.Synced(
+                "Doors and gates you build open by themselves when you walk up to them and close once you've walked " +
+                "through. Doors in dungeons, crypts and other places the game generated are left alone."));
     }
 
     private static void Postfix(Door __instance)

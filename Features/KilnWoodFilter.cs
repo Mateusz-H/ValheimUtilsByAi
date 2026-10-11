@@ -22,14 +22,16 @@ internal static class KilnWoodFilter
             "Crafting",
             "KilnWoodFilter",
             true,
-            "The charcoal kiln only accepts the wood types listed in KilnAllowedWood. " +
-            "Other wood (fine wood, core wood, ...) is refused with the vanilla \"won't work\" message.");
+            Plugin.Synced(
+                "The charcoal kiln only accepts the wood types listed in KilnAllowedWood. Other wood (fine wood, " +
+                "core wood, ...) is refused with the vanilla \"won't work\" message."));
         _allowedWood = config.Bind(
             "Crafting",
             "KilnAllowedWood",
             "Wood",
-            "Comma-separated item prefab names the kiln accepts when KilnWoodFilter is on. " +
-            "Vanilla kiln wood: Wood, FineWood, RoundLog, Blackwood.");
+            Plugin.Synced(
+                "Comma-separated item prefab names the kiln accepts when KilnWoodFilter is on. Vanilla kiln wood: " +
+                "Wood, FineWood, RoundLog, Blackwood."));
         ParseAllowedWood();
         _allowedWood.SettingChanged += (_, _) => ParseAllowedWood();
     }

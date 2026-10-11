@@ -42,15 +42,16 @@ internal static class CraftFromContainers
             "Crafting",
             "CraftFromContainers",
             true,
-            "Crafting, upgrading and building also use materials from chests near you, after your own inventory. " +
-            "A craft takes its materials out of the chests when you click Craft and puts back what is left if " +
-            "you cancel. In multiplayer a chest another player has open is skipped until they close it; " +
-            "you get a short message and can try again.");
+            Plugin.Synced(
+                "Crafting, upgrading and building also use materials from chests near you, after your own inventory. " +
+                "A craft takes its materials out of the chests when you click Craft and puts back what is left if " +
+                "you cancel. In multiplayer a chest another player has open is skipped until they close it; you get " +
+                "a short message and can try again."));
         _radius = config.Bind(
             "Crafting",
             "CraftFromContainersRadius",
             15f,
-            new ConfigDescription(
+            Plugin.Synced(
                 "How far from you, in meters, a chest can be to be used.",
                 new AcceptableValueRange<float>(1f, 50f)));
     }
