@@ -322,7 +322,21 @@ inside someone else's ward stay vanilla and still need E.
 Side: Client. Opening uses the same request as pressing E, so other players see the doors move without having the
 mod, and the server doesn't need it.
 
+### Mod versions in main menu (`[Interface] ModVersions`, default: on)
+
+The main menu shows a second line under the game version, for example `ValheimUtilsByAi 0.0.17 (12 mods)`, and gets
+a Mods button under Settings. It opens a list of every mod BepInEx loaded, with its version. Copy puts the list,
+headed by the game version, on the clipboard, so friends can compare their setups. Close, Escape or gamepad B close
+the list. The version shown is the one the mod reports to BepInEx, which can differ from its Thunderstore version.
+Mods that failed to load are not listed. The Escape menu in game stays vanilla.
+
+Side: Client. Nobody else needs it.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
 [Jötunn](https://thunderstore.io/c/valheim/p/ValheimModding/Jotunn/).
+
+When both you and the server run this mod, the versions must match exactly. Otherwise Jötunn refuses the connection
+and shows a window with both versions, so update the server and every player together. Players without the mod, or
+servers without it, can still connect.

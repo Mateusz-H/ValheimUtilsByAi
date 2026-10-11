@@ -34,6 +34,8 @@
     <Reference Include="UnityEngine.AssetBundleModule" HintPath="$(ValheimManaged)/UnityEngine.AssetBundleModule.dll" Private="false" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ValheimManaged)/UnityEngine.PhysicsModule.dll" Private="false" />
     <Reference Include="UnityEngine.UI" HintPath="$(ValheimManaged)/UnityEngine.UI.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ValheimManaged)/UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="UnityEngine.IMGUIModule" HintPath="$(ValheimManaged)/UnityEngine.IMGUIModule.dll" Private="false" />
     <Reference Include="Unity.TextMeshPro" HintPath="$(ValheimManaged)/Unity.TextMeshPro.dll" Private="false" />
     <Reference Include="assembly_guiutils" HintPath="$(ValheimManaged)/assembly_guiutils.dll" Private="false" />
     <Reference Include="Splatform" HintPath="$(ValheimManaged)/Splatform.dll" Private="false" />

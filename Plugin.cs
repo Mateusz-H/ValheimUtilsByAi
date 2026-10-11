@@ -2,12 +2,15 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
+using Jotunn.Utils;
 using ValheimUtilsByAi.Features;
 
 namespace ValheimUtilsByAi;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 [BepInDependency(Jotunn.Main.ModGuid)]
+// Jötunn refuses the connection, with its version window, when client and server both run this mod in different versions.
+[NetworkCompatibility(CompatibilityLevel.VersionCheckOnly, VersionStrictness.Patch)]
 public sealed class Plugin : BaseUnityPlugin
 {
     internal static ManualLogSource Log { get; private set; } = null!;
@@ -33,6 +36,7 @@ public sealed class Plugin : BaseUnityPlugin
         VehiclesOnMap.Bind(Config);
         BreedingLimit.Bind(Config);
         AutoDoors.Bind(Config);
+        ModVersions.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }
