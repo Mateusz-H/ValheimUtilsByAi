@@ -13,6 +13,8 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <!-- The game assemblies are built against netstandard 2.1; take it from the game instead of the SDK's 2.0 facades (MSB3277). -->
+    <ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>
     <!-- Game assemblies: Steam client install or the free dedicated server (SteamCMD app 896660). Override: -p:ValheimManaged=... -->
     <ValheimManaged Condition="'$(ValheimManaged)' == ''">C:/Users/mateu/valheim_server/valheim_server_Data/Managed</ValheimManaged>
     <ThunderstoreDir>$(MSBuildProjectDirectory)\thunderstore</ThunderstoreDir>
@@ -27,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="netstandard" HintPath="$(ValheimManaged)/netstandard.dll" Private="false" />
     <Reference Include="assembly_valheim" HintPath="$(ValheimManaged)/assembly_valheim.dll" Private="false" />
     <Reference Include="assembly_utils" HintPath="$(ValheimManaged)/assembly_utils.dll" Private="false" />
     <Reference Include="UnityEngine" HintPath="$(ValheimManaged)/UnityEngine.dll" Private="false" />
