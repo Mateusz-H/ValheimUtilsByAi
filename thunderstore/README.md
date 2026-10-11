@@ -91,7 +91,12 @@ lost.
 
 In multiplayer only the game that owns a chest edits it. A linked piece asks the chest's owner to hand it over and
 waits until it does; the owner hands it over only while nobody has the chest open, so two players never write to the
-same chest at once. A player opening a chest always sees what the linked pieces put into it, even a moment before.
+same chest at once. A piece only asks when it has work for that chest: an input chest when the piece has room and the
+chest holds something it uses, an output chest while the piece works or has products ready and the chest has room.
+An idle piece leaves chests where they are, so a chest shared by pieces of two players only goes back and forth while
+both have work for it, at most every 5 s. Ore a player brings back and puts into an input chest (by hand or with quick
+stack) reaches the piece within a few seconds, also when its furnace stood empty. A player opening a chest always sees
+what the linked pieces put into it, even a moment before.
 The game that controls a piece (in multiplayer usually the first player who came near it) runs its automation with its
 own settings.
 

@@ -185,12 +185,13 @@ internal static class AutoStorage
 
     private static readonly Dictionary<Container, float> NextRequest = new();
 
+    private static bool RequestDue(Container chest) => !NextRequest.TryGetValue(chest, out var next) || Time.time >= next;
+
     private static void RequestOwnership(Container chest, ZNetView view)
     {
         var owner = view.GetZDO().GetOwner();
         // No owner: the server assigns one within a few seconds.
-        if (owner == 0) return;
-        if (NextRequest.TryGetValue(chest, out var next) && Time.time < next) return;
+        if (owner == 0 || !RequestDue(chest)) return;
         NextRequest[chest] = Time.time + 5f;
         view.InvokeRPC(owner, RequestOwnRpc);
     }
@@ -270,17 +271,18 @@ internal static class AutoStorage
         AccessTools.MethodDelegate<Func<Container, bool>>(AccessTools.Method(typeof(Container), "Load"));
 
     // Inventories of the piece's chests in this direction that this peer can edit right now, in link order; none while
-    // the feature is off or another peer simulates the piece. A chest that is missing, too far or open is skipped; one
-    // owned by another peer is asked for and skipped until it arrives. Only the owner's edits are saved by
-    // Container.OnContainerChanged. Open means IsInUse on the owner, not the s_inUse ZDO flag: that flag stays set after
-    // a player crashes with the chest open, and the owner refuses the hand-over while the chest really is open.
-    private static IReadOnlyList<Inventory> LinkedInventories(ZNetView pieceView, Direction direction)
+    // the feature is off or another peer simulates the piece. A chest that is missing, too far or open is skipped. One
+    // owned by another peer is skipped too, and asked for only when wanted says the piece has work for it, judged from
+    // the chest's contents as last synced to this peer: an idle piece never pulls chests around, so two pieces run by
+    // different peers only pass a shared chest back and forth while both have work for it, at most every 5 s. Items a
+    // player puts into a chest reach every peer with the chest, so the piece asks for it on its next tick. Only the
+    // owner's edits are saved by Container.OnContainerChanged. Open means IsInUse on the owner, not the s_inUse ZDO
+    // flag: that flag stays set after a player crashes with the chest open, and the owner refuses the hand-over while
+    // the chest really is open.
+    private static IReadOnlyList<Inventory> LinkedInventories(ZNetView pieceView, Direction direction, Func<Inventory, bool> wanted)
     {
-        if (!_enabled.Value || !pieceView.IsValid() || !pieceView.IsOwner()) return Array.Empty<Inventory>();
-        var zdo = pieceView.GetZDO();
-        if (zdo.GetVec3(LegacyLinkKey, Vector3.zero) != Vector3.zero) zdo.Set(LegacyLinkKey, Vector3.zero);
-        var positions = ReadChestPositions(zdo, direction);
-        if (positions == null || positions.Count == 0) return Array.Empty<Inventory>();
+        var positions = LinkedPositions(pieceView, direction);
+        if (positions == null) return Array.Empty<Inventory>();
 
         var inventories = new List<Inventory>(positions.Count);
         foreach (var position in positions)
@@ -290,11 +292,44 @@ internal static class AutoStorage
             if (chest == null || chest.IsInUse()) continue;
             var chestView = ContainerView(chest);
             if (chestView == null || !chestView.IsValid()) continue;
-            if (!chestView.IsOwner()) { RequestOwnership(chest, chestView); continue; }
-            CraftFromContainers.LoadChest(chest);
-            inventories.Add(chest.GetInventory());
+            if (chestView.IsOwner())
+            {
+                CraftFromContainers.LoadChest(chest);
+                inventories.Add(chest.GetInventory());
+            }
+            else if (wanted != Never && RequestDue(chest))
+            {
+                CraftFromContainers.LoadChest(chest);
+                if (wanted(chest.GetInventory())) RequestOwnership(chest, chestView);
+            }
         }
         return inventories;
+    }
+
+    private static readonly Func<Inventory, bool> Never = _ => false;
+
+    // Null while the feature is off, another peer simulates the piece or it has no chests in this direction.
+    private static List<Vector3>? LinkedPositions(ZNetView pieceView, Direction direction)
+    {
+        if (!_enabled.Value || !pieceView.IsValid() || !pieceView.IsOwner()) return null;
+        var zdo = pieceView.GetZDO();
+        if (zdo.GetVec3(LegacyLinkKey, Vector3.zero) != Vector3.zero) zdo.Set(LegacyLinkKey, Vector3.zero);
+        var positions = ReadChestPositions(zdo, direction);
+        return positions == null || positions.Count == 0 ? null : positions;
+    }
+
+    // An output chest worth asking for: Store would put this product into it. A chest without room for it is never
+    // asked for, so pieces that can't store anything don't pull it around.
+    private static bool CanStore(Inventory inventory, GameObject? prefab, int amount) =>
+        prefab != null && amount > 0 && inventory.CanAddItem(Product(prefab, amount));
+
+    // A chest worth asking for to feed the piece: it holds fuel the piece lacks, or something FindCookableItem would take
+    // while the piece has room. The last unit of a liked stack doesn't count, so a marker never pulls a chest over.
+    private static bool HasInput<TPiece>(Inventory inventory, ItemDrop? fuelItem, bool needFuel, bool needItems, TPiece piece,
+        Func<TPiece, Inventory, ItemDrop.ItemData?> findCookable)
+    {
+        if (needFuel && fuelItem != null && LikedItems.CountAvailable(inventory, fuelItem.m_itemData.m_shared.m_name) > 0) return true;
+        return needItems && LikedItems.SkippingReserved(() => findCookable(piece, inventory)) != null;
     }
 
     private static bool TakeOne(IReadOnlyList<Inventory> inputs, ItemDrop item)
@@ -328,15 +363,21 @@ internal static class AutoStorage
     private static bool Store(IReadOnlyList<Inventory> outputs, GameObject prefab, int amount)
     {
         if (amount <= 0) return false;
-        var item = prefab.GetComponent<ItemDrop>().m_itemData.Clone();
-        item.m_dropPrefab = prefab;
-        item.m_stack = amount;
-        item.m_worldLevel = (byte)Game.m_worldLevel;
+        var item = Product(prefab, amount);
         foreach (var inventory in outputs)
         {
             if (inventory.CanAddItem(item)) return inventory.AddItem(item);
         }
         return false;
+    }
+
+    private static ItemDrop.ItemData Product(GameObject prefab, int amount)
+    {
+        var item = prefab.GetComponent<ItemDrop>().m_itemData.Clone();
+        item.m_dropPrefab = prefab;
+        item.m_stack = amount;
+        item.m_worldLevel = (byte)Game.m_worldLevel;
+        return item;
     }
 
     // ---------------------------------------------------------------- collecting stray products
@@ -363,34 +404,66 @@ internal static class AutoStorage
 
     // Once a minute per piece with output chests, move items of the kinds it makes lying within the collect radius
     // into those chests. Products end up on the ground whenever the chests were full, open or unloaded at the moment
-    // they came out.
+    // they came out. An output chest is only asked for when a stray fits into it, and a drop only when an owned output
+    // chest has room for it, so two pieces never pass a drop or a full chest back and forth. After asking, one sweep
+    // follows 2 s later, once the hand-over arrived, instead of a minute later.
     //
     // No duplication: a drop is only touched while this peer owns its ZDO. Ownership is handed over only by the
     // current owner (ItemDrop.RPC_RequestOwn), so exactly one peer can take it, the same rule vanilla pickup relies
     // on; otherwise we request ownership and retry on the next sweep. Each chest's count is measured before and after
     // adding, and the drop loses exactly what went in: destroyed when the whole stack fit, shrunk when only part did.
-    private static void CollectStrays(ZNetView pieceView, IReadOnlyList<Inventory> outputs, IEnumerable<ItemDrop?> products)
+    private const float CollectRetry = 2f;
+    private static readonly HashSet<ZNetView> CollectRetried = new();
+
+    private static void CollectStrays(ZNetView pieceView, IEnumerable<ItemDrop?> products)
+    {
+        if (LinkedPositions(pieceView, Direction.Output) == null || !CollectDue(pieceView)) return;
+        var asked = SweepStrays(pieceView, products);
+        if (asked && CollectRetried.Add(pieceView)) NextCollect[pieceView] = Time.time + CollectRetry;
+        else CollectRetried.Remove(pieceView);
+    }
+
+    // True when it asked for a chest or a drop.
+    private static bool SweepStrays(ZNetView pieceView, IEnumerable<ItemDrop?> products)
     {
         var names = new HashSet<string>(products.Where(product => product != null).Select(product => product!.m_itemData.m_shared.m_name));
-        if (names.Count == 0) return;
+        if (names.Count == 0) return false;
         if (_itemMask == 0) _itemMask = LayerMask.GetMask("item");
         var hits = Physics.OverlapSphereNonAlloc(pieceView.transform.position, _collectRadius.Value, ItemHits, _itemMask);
+        var strays = new List<ItemDrop>();
         for (var i = 0; i < hits; i++)
         {
             var body = ItemHits[i].attachedRigidbody;
             var drop = body == null ? null : body.GetComponent<ItemDrop>();
             if (drop == null || drop.IsPiece()) continue;
             var view = ItemView(drop);
-            if (view == null || !view.IsValid()) continue;
-            var name = drop.m_itemData.m_shared.m_name;
-            if (!names.Contains(name)) continue;
-            if (!view.IsOwner()) { drop.RequestOwn(); continue; }
-            if (!drop.CanPickup()) continue;
-
-            drop.Load();
+            if (view == null || !view.IsValid() || !names.Contains(drop.m_itemData.m_shared.m_name)) continue;
             // Something a player had in their inventory and dropped on purpose (handing it over, sorting) stays put;
-            // fresh products have never been picked up. m_pickedUp is saved in the drop's ZDO, so every peer agrees.
+            // fresh products have never been picked up. m_pickedUp is saved in the drop's ZDO, so every peer agrees,
+            // and Load only reads it.
+            drop.Load();
+            if (!drop.m_itemData.m_pickedUp) strays.Add(drop);
+        }
+        if (strays.Count == 0) return false;
+        var outputs = LinkedInventories(pieceView, Direction.Output,
+            inventory => strays.Exists(drop => inventory.CanAddItem(drop.m_itemData, 1)));
+        // None here yet: those with room were just asked for.
+        if (outputs.Count == 0) return true;
+        var asked = false;
+        foreach (var drop in strays)
+        {
+            if (!outputs.Any(inventory => inventory.CanAddItem(drop.m_itemData, 1))) continue;
+            var view = ItemView(drop);
+            if (!view.IsOwner())
+            {
+                drop.RequestOwn();
+                asked = true;
+                continue;
+            }
+            if (!drop.CanPickup()) continue;
+            drop.Load();
             if (drop.m_itemData.m_pickedUp) continue;
+            var name = drop.m_itemData.m_shared.m_name;
             var stack = drop.m_itemData.m_stack;
             var left = stack;
             foreach (var inventory in outputs)
@@ -405,6 +478,7 @@ internal static class AutoStorage
             if (left <= 0) ZNetScene.instance.Destroy(drop.gameObject);
             else if (left < stack) drop.SetStack(left);
         }
+        return asked;
     }
 
     // ---------------------------------------------------------------- smelter family
@@ -424,20 +498,26 @@ internal static class AutoStorage
         private static void Postfix(Smelter __instance)
         {
             var nview = SmelterView(__instance);
-            if (nview == null) return;
-            var outputs = LinkedInventories(nview, Direction.Output);
-            if (outputs.Count > 0 && CollectDue(nview))
-            {
-                CollectStrays(nview, outputs, __instance.m_conversion.Select(conversion => conversion.m_to));
-            }
-
-            var inputs = LinkedInventories(nview, Direction.Input);
-            if (inputs.Count == 0) return;
+            if (nview == null || !nview.IsValid()) return;
             var zdo = nview.GetZDO();
-            if (__instance.m_maxFuel > 0 && __instance.m_fuelItem != null)
+            var queued = zdo.GetInt(ZDOVars.s_queued);
+            var fuel = zdo.GetFloat(ZDOVars.s_fuel);
+            // Shortly before a product comes out the output chests are asked for, so they are here in time. A smelter
+            // that makes no progress (no fuel, no roof, blocked smoke, no wind) never asks.
+            var amount = 0;
+            var product = FinishingSoon(__instance, zdo, queued) ? FinishingProduct(__instance, zdo, out amount) : null;
+            LinkedInventories(nview, Direction.Output, product != null ? inventory => CanStore(inventory, product, amount) : Never);
+            CollectStrays(nview, __instance.m_conversion.Select(conversion => conversion.m_to));
+
+            var usesFuel = __instance.m_maxFuel > 0 && __instance.m_fuelItem != null;
+            var needFuel = usesFuel && fuel <= __instance.m_maxFuel - 1;
+            var needOre = queued < __instance.m_maxOre;
+            var inputs = LinkedInventories(nview, Direction.Input, inventory =>
+                HasInput(inventory, __instance.m_fuelItem, needFuel, needOre, __instance, SmelterFindCookable));
+            if (inputs.Count == 0) return;
+            if (usesFuel)
             {
-                var fuel = zdo.GetFloat(ZDOVars.s_fuel);
-                while (fuel <= __instance.m_maxFuel - 1 && TakeOne(inputs, __instance.m_fuelItem)) fuel += 1f;
+                while (fuel <= __instance.m_maxFuel - 1 && TakeOne(inputs, __instance.m_fuelItem!)) fuel += 1f;
                 zdo.Set(ZDOVars.s_fuel, fuel);
             }
 
@@ -450,6 +530,37 @@ internal static class AutoStorage
         }
     }
 
+    private const float OutputLead = 10f;
+
+    // Vanilla's progress test in UpdateSmelter, plus the bake timer within OutputLead of finishing the current item.
+    private static bool FinishingSoon(Smelter smelter, ZDO zdo, int queued)
+    {
+        if (smelter.m_maxOre == 0 || queued == 0 || smelter.m_secPerProduct <= 0f || !smelter.IsActive()) return false;
+        if (smelter.m_windmill != null && smelter.m_windmill.GetPowerOutput() <= 0f) return false;
+        return zdo.GetFloat(ZDOVars.s_bakeTimer) >= smelter.m_secPerProduct - OutputLead;
+    }
+
+    // What finishing the current item spawns, as Smelter.QueueProcessed does: one product, or for pieces that stack
+    // their output (windmill, spinning wheel) the waiting stack once it is full or another item takes over. Null when
+    // it spawns nothing.
+    private static GameObject? FinishingProduct(Smelter smelter, ZDO zdo, out int amount)
+    {
+        amount = 1;
+        var ore = zdo.GetString(ZDOVars.s_item0);
+        if (!smelter.m_spawnStack) return SmelterConversion(smelter, ore)?.m_to?.gameObject;
+        var waitingOre = zdo.GetString(ZDOVars.s_spawnOre);
+        var waiting = zdo.GetInt(ZDOVars.s_spawnAmount);
+        if (waitingOre.Length == 0) return null;
+        if (waitingOre != ore)
+        {
+            amount = waiting;
+            return SmelterConversion(smelter, waitingOre)?.m_to?.gameObject;
+        }
+        var product = SmelterConversion(smelter, ore)?.m_to;
+        amount = waiting + 1;
+        return product != null && amount >= product.m_itemData.m_shared.m_maxStackSize ? product.gameObject : null;
+    }
+
     // Single choke point for every smelter output path; falls back to the vanilla drop when no output chest has room.
     [HarmonyPatch(typeof(Smelter), "Spawn")]
     private static class CollectSmelterOutput
@@ -458,10 +569,10 @@ internal static class AutoStorage
         {
             var nview = SmelterView(__instance);
             if (nview == null) return true;
-            var outputs = LinkedInventories(nview, Direction.Output);
-            if (outputs.Count == 0) return true;
             var product = SmelterConversion(__instance, ore)?.m_to;
-            return product == null || !Store(outputs, product.gameObject, stack);
+            if (product == null) return true;
+            var outputs = LinkedInventories(nview, Direction.Output, inventory => CanStore(inventory, product.gameObject, stack));
+            return outputs.Count == 0 || !Store(outputs, product.gameObject, stack);
         }
     }
 
@@ -474,13 +585,14 @@ internal static class AutoStorage
 
     private static void CollectLevel(ZNetView nview, ItemDrop item)
     {
-        var outputs = LinkedInventories(nview, Direction.Output);
-        if (outputs.Count == 0) return;
-        if (CollectDue(nview)) CollectStrays(nview, outputs, new[] { item });
+        if (!nview.IsValid()) return;
+        CollectStrays(nview, new[] { item });
         var zdo = nview.GetZDO();
         var level = zdo.GetInt(ZDOVars.s_level);
         if (level <= 0) return;
         var amount = level * Game.instance.ScaleDrops(item.m_itemData, 1);
+        var outputs = LinkedInventories(nview, Direction.Output, inventory => CanStore(inventory, item.gameObject, amount));
+        if (outputs.Count == 0) return;
         if (Store(outputs, item.gameObject, amount)) zdo.Set(ZDOVars.s_level, 0);
     }
 
@@ -528,15 +640,23 @@ internal static class AutoStorage
         private static void Postfix(CookingStation __instance)
         {
             var nview = CookingView(__instance);
-            if (nview == null) return;
+            if (nview == null || !nview.IsValid()) return;
             var zdo = nview.GetZDO();
-            var outputs = LinkedInventories(nview, Direction.Output);
+            CollectStrays(nview, __instance.m_conversion.Select(conversion => conversion.m_to).Concat(new[] { __instance.m_overCookedItem }));
+            // The output chests are asked for once something on the station is done; a done item burns only after
+            // another cooking time, far longer than the hand-over.
+            var done = new List<GameObject>();
+            for (var slot = 0; slot < __instance.m_slots.Length; slot++)
+            {
+                var itemName = zdo.GetString("slot" + slot);
+                if (itemName == "" || !CookingIsItemDone(__instance, itemName)) continue;
+                var prefab = ObjectDB.instance.GetItemPrefab(itemName);
+                if (prefab != null) done.Add(prefab);
+            }
+            var outputs = LinkedInventories(nview, Direction.Output,
+                done.Count > 0 ? inventory => done.Exists(prefab => CanStore(inventory, prefab, 1)) : Never);
             if (outputs.Count > 0)
             {
-                if (CollectDue(nview))
-                {
-                    CollectStrays(nview, outputs, __instance.m_conversion.Select(conversion => conversion.m_to).Concat(new[] { __instance.m_overCookedItem }));
-                }
                 for (var slot = 0; slot < __instance.m_slots.Length; slot++)
                 {
                     var itemName = zdo.GetString("slot" + slot);
@@ -548,12 +668,17 @@ internal static class AutoStorage
                 }
             }
 
-            var inputs = LinkedInventories(nview, Direction.Input);
+            var usesFuel = __instance.m_useFuel && __instance.m_fuelItem != null;
+            var needFuel = usesFuel && zdo.GetFloat(ZDOVars.s_fuel) <= __instance.m_maxFuel - 1;
+            // The fire test is a physics query: only made for a linked chest worth asking for.
+            var inputs = LinkedInventories(nview, Direction.Input, inventory => HasInput(inventory, __instance.m_fuelItem,
+                needFuel, (!__instance.m_requireFire || CookingIsFireLit(__instance)) && CookingFreeSlot(__instance) >= 0,
+                __instance, CookingFindCookable));
             if (inputs.Count == 0) return;
-            if (__instance.m_useFuel && __instance.m_fuelItem != null)
+            if (usesFuel)
             {
                 var fuel = zdo.GetFloat(ZDOVars.s_fuel);
-                while (fuel <= __instance.m_maxFuel - 1 && TakeOne(inputs, __instance.m_fuelItem)) fuel += 1f;
+                while (fuel <= __instance.m_maxFuel - 1 && TakeOne(inputs, __instance.m_fuelItem!)) fuel += 1f;
                 zdo.Set(ZDOVars.s_fuel, fuel);
             }
 
@@ -582,32 +707,33 @@ internal static class AutoStorage
             var nview = FermenterView(__instance);
             if (nview == null || !nview.IsValid()) return;
             var zdo = nview.GetZDO();
-            var outputs = LinkedInventories(nview, Direction.Output);
-            if (outputs.Count > 0 && CollectDue(nview))
-            {
-                CollectStrays(nview, outputs, __instance.m_conversion.Select(conversion => conversion.m_to));
-            }
+            var products = __instance.m_conversion.Select(conversion => conversion.m_to);
+            CollectStrays(nview, products);
 
             var content = zdo.GetInt(ZDOVars.s_content);
             if (content == 0)
             {
                 // Asked for only while empty, so a barrel fermenting for 40 minutes doesn't keep pulling its input
                 // chests away from other players.
-                var raw = TakeCookable(LinkedInventories(nview, Direction.Input), __instance, FermenterFindCookable);
+                var inputs = LinkedInventories(nview, Direction.Input, inventory =>
+                    HasInput(inventory, null, false, true, __instance, FermenterFindCookable));
+                var raw = TakeCookable(inputs, __instance, FermenterFindCookable);
                 if (raw != null) nview.InvokeRPC("RPC_AddItem", raw.m_dropPrefab.name.GetStableHashCode(), raw.m_cheated);
                 return;
             }
 
-            if (outputs.Count == 0) return;
+            // The output chests are asked for once the mead is ready, not during the fermentation before.
             var startTicks = zdo.GetLong(ZDOVars.s_startTime);
             if (startTicks == 0) return;
             var fermentedSeconds = (ZNet.instance.GetTime() - new DateTime(startTicks)).TotalSeconds;
             if (fermentedSeconds <= __instance.m_fermentationDuration) return;
-
             foreach (var conversion in __instance.m_conversion)
             {
                 if (conversion.m_from == null || conversion.m_from.gameObject.name.GetStableHashCode() != content) continue;
-                if (!Store(outputs, conversion.m_to.gameObject, conversion.m_producedItems)) return;
+                var mead = conversion.m_to.gameObject;
+                var outputs = LinkedInventories(nview, Direction.Output,
+                    inventory => CanStore(inventory, mead, conversion.m_producedItems));
+                if (outputs.Count == 0 || !Store(outputs, mead, conversion.m_producedItems)) return;
                 zdo.Set(ZDOVars.s_content, 0);
                 zdo.Set(ZDOVars.s_startTime, 0L);
                 zdo.Set(ZDOVars.s_cheatedQueued, false);
