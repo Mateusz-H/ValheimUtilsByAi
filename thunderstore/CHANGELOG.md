@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Mod versions in main menu: the main menu shows this mod's version and the number of installed mods, and a Mods button lists every installed mod with its version.
+- Version check: a client and a server that both run this mod must now run the same version, otherwise Jötunn refuses the connection and shows both versions.
+
 ## 0.0.16
 
 - Fix: a chest another player opened and closed no longer keeps showing an open lid while you craft or build near it, or while an AutoStorage piece uses it.
