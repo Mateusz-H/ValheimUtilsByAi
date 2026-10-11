@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.17
+
 - Mod versions in main menu: the main menu shows this mod's version and the number of installed mods, and a Mods button lists every installed mod with its version.
 - Version check: a client and a server that both run this mod must now run the same version, otherwise Jötunn refuses the connection and shows both versions.
 
