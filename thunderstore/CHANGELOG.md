@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.19
+
 - Server config sync: on a server running the mod, every setting except keys and the main-menu mod list comes from the server's config for all players; your own file applies again on disconnect, in single player and on servers without the mod.
 
 - Liked items: like a stack with Alt + right click instead of Alt + left click, which MyLittleUI uses to post the item in chat.
