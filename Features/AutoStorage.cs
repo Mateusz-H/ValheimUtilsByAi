@@ -302,21 +302,20 @@ internal static class AutoStorage
         var name = item.m_itemData.m_shared.m_name;
         foreach (var inventory in inputs)
         {
-            if (inventory.CountItems(name) < 1) continue;
-            inventory.RemoveItem(name, 1);
-            return true;
+            if (LikedItems.RemoveAvailable(inventory, name, 1) == 1) return true;
         }
         return false;
     }
 
     // Removes and returns the first item the piece's vanilla FindCookableItem picks from the input chests, in link
-    // order. Going through FindCookableItem keeps KilnWoodFilter's narrowing of the kiln's list.
+    // order. Going through FindCookableItem keeps KilnWoodFilter's narrowing of the kiln's list. The last unit of a
+    // liked stack stays: FindCookableItem looks items up with Inventory.GetItem, which skips it in this scope.
     private static ItemDrop.ItemData? TakeCookable<TPiece>(IReadOnlyList<Inventory> inputs, TPiece piece,
         Func<TPiece, Inventory, ItemDrop.ItemData?> findCookable)
     {
         foreach (var inventory in inputs)
         {
-            var item = findCookable(piece, inventory);
+            var item = LikedItems.SkippingReserved(() => findCookable(piece, inventory));
             if (item != null && inventory.RemoveOneItem(item)) return item;
         }
         return null;

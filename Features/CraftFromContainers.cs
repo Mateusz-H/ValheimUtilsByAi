@@ -116,8 +116,16 @@ internal static class CraftFromContainers
         if (_inRangeFrame == Time.frameCount) return InRange;
         _inRangeFrame = Time.frameCount;
         InRange.Clear();
+        UsableChestsWithin(_radius.Value, InRange);
+        return InRange;
+    }
+
+    // Adds the chests within radius of the local player that the player may use, owned or not. QuickStack and Restock
+    // use it too.
+    internal static void UsableChestsWithin(float radius, List<Container> result)
+    {
         var player = Player.m_localPlayer;
-        if (player == null) return InRange;
+        if (player == null) return;
         var playerID = player.GetPlayerID();
         var position = player.transform.position;
         for (var i = Chests.Count - 1; i >= 0; i--)
@@ -125,18 +133,28 @@ internal static class CraftFromContainers
             var chest = Chests[i];
             if (chest == null) { Chests.RemoveAt(i); RequestedByUs.Remove(chest!); continue; }
             var view = ContainerView(chest);
-            if (!view.IsValid() || Vector3.Distance(chest.transform.position, position) > _radius.Value) continue;
+            if (!view.IsValid() || Vector3.Distance(chest.transform.position, position) > radius) continue;
             if (!chest.GetComponent<Piece>().IsPlacedByPlayer() || !HasAccess(chest, playerID)) continue;
             if (chest.m_checkGuardStone && !PrivateArea.CheckAccess(chest.transform.position, 0f, flash: false)) continue;
-            InRange.Add(chest);
+            result.Add(chest);
         }
-        return InRange;
     }
 
-    private static bool IsOwned(Container chest) => ContainerView(chest).IsOwner();
+    internal static bool IsOwned(Container chest)
+    {
+        var view = ContainerView(chest);
+        return view != null && view.IsValid() && view.IsOwner();
+    }
 
     // Open in another player's UI: its contents are about to change and vanilla won't hand it over.
     private static bool OpenElsewhere(ZNetView view) => view.GetZDO().GetInt(ZDOVars.s_inUse) == 1;
+
+    // Not owned here and open in another player's UI: it can be neither edited nor asked for.
+    internal static bool Busy(Container chest)
+    {
+        var view = ContainerView(chest);
+        return view == null || !view.IsValid() || (!view.IsOwner() && OpenElsewhere(view));
+    }
 
     private static bool Countable(Container chest, bool countNotOwned)
     {
@@ -146,7 +164,7 @@ internal static class CraftFromContainers
 
     // Load picks up data that arrived since the last Container.CheckForChanges (once a second); an owner's own edits
     // are always current.
-    private static Inventory LoadedInventory(Container chest)
+    internal static Inventory LoadedInventory(Container chest)
     {
         LoadChest(chest);
         return chest.GetInventory();
@@ -168,7 +186,7 @@ internal static class CraftFromContainers
     {
         foreach (var requirement in requirements)
         {
-            if (requirement.m_resItem && inventory.HaveItem(requirement.m_resItem.m_itemData.m_shared.m_name)) return true;
+            if (requirement.m_resItem && LikedItems.CountAvailable(inventory, requirement.m_resItem.m_itemData.m_shared.m_name) > 0) return true;
         }
         return false;
     }
@@ -195,7 +213,7 @@ internal static class CraftFromContainers
             var countNotOwned = _uiDepth > 0;
             foreach (var chest in ChestsInRange())
             {
-                if (Countable(chest, countNotOwned)) __result += LoadedInventory(chest).CountItems(name, quality, matchWorldLevel);
+                if (Countable(chest, countNotOwned)) __result += LikedItems.CountAvailable(LoadedInventory(chest), name, quality, matchWorldLevel);
             }
         }
     }
@@ -378,13 +396,23 @@ internal static class CraftFromContainers
         if (!Active(player)) return;
         foreach (var chest in ChestsInRange())
         {
-            var view = ContainerView(chest);
-            // Owner 0: the server assigns one within a few seconds, and an RPC to 0 would go to every peer.
-            if (!view.IsValid() || view.IsOwner() || view.GetZDO().GetOwner() == 0 || OpenElsewhere(view)) continue;
-            if (!HoldsAny(LoadedInventory(chest), requirements)) continue;
-            RequestedByUs.Add(chest);
-            view.InvokeRPC("RPC_RequestOpen", player.GetPlayerID());
+            if (!Busy(chest) && !IsOwned(chest) && HoldsAny(LoadedInventory(chest), requirements)) RequestChest(chest);
         }
+    }
+
+    // Asks the chest's owner to hand it over, the way opening it does, without showing the chest. False when it is
+    // not owned here and can't be asked for now. QuickStack and Restock ask through this too.
+    internal static bool RequestChest(Container chest)
+    {
+        var player = Player.m_localPlayer;
+        var view = ContainerView(chest);
+        if (player == null || view == null || !view.IsValid()) return false;
+        if (view.IsOwner()) return true;
+        // Owner 0: the server assigns one within a few seconds, and an RPC to 0 would go to every peer.
+        if (view.GetZDO().GetOwner() == 0 || OpenElsewhere(view)) return false;
+        RequestedByUs.Add(chest);
+        view.InvokeRPC("RPC_RequestOpen", player.GetPlayerID());
+        return true;
     }
 
     private static Piece? _requestedForPiece;
@@ -483,9 +511,12 @@ internal static class CraftFromContainers
                 {
                     if (missing <= 0) break;
                     if (!Matches(item, name, -1, matchWorldLevel: true)) continue;
-                    var take = Mathf.Min(missing, item.m_stack);
+                    // A liked stack keeps its last unit, which marks the chest for quick stacking.
+                    var take = Mathf.Min(missing, item.m_stack - LikedItems.Reserved(item));
+                    if (take <= 0) continue;
                     var taken = item.Clone();
                     taken.m_stack = take;
+                    LikedItems.Unlike(taken);
                     if (!inventory.RemoveItem(item, take)) continue;
                     Held.Add(new HeldItem(chest, taken));
                     missing -= take;
@@ -603,9 +634,9 @@ internal static class CraftFromContainers
                     if (missing <= 0) break;
                     if (!IsOwned(chest)) continue;
                     var inventory = LoadedInventory(chest);
-                    var take = Mathf.Min(missing, inventory.CountItems(name, itemQuality));
+                    var take = Mathf.Min(missing, LikedItems.CountAvailable(inventory, name, itemQuality));
                     if (take <= 0) continue;
-                    inventory.RemoveItem(name, take, itemQuality);
+                    LikedItems.RemoveAvailable(inventory, name, take, itemQuality);
                     missing -= take;
                 }
                 // The owned-only check before consuming counted these, so the check and this loop disagree (another

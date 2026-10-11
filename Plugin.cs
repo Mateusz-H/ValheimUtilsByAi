@@ -37,6 +37,13 @@ public sealed class Plugin : BaseUnityPlugin
         BreedingLimit.Bind(Config);
         AutoDoors.Bind(Config);
         ModVersions.Bind(Config);
+        LikedItems.Bind(Config);
+        // Registration order is the order of their buttons.
+        QuickStack.Bind(Config);
+        StoreAll.Bind(Config);
+        Restock.Bind(Config);
+        SortItems.Bind(Config);
+        TrashItems.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }
