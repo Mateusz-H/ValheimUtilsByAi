@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Larger crafting station build range: the default is now 100 m (was 40 m) and the maximum 128 m (was 64 m). An existing config keeps its value; set `StationBuildRangeMeters` to change it.
 - Bigger chests: chests get twice their vanilla rows (reinforced chest 6x8, black metal chest 8x8, ...); the multiplier and the list of chests are configurable, and turning it off or removing the mod keeps every filled row.
 - Auto repair at nearby stations: opening a crafting station also repairs what stations within `AutoRepairNearbyMeters` (default 15 m) can repair, such as the forge next to your workbench.
 - Liked items: Alt + left click likes a stack. In your inventory quick stack, store all, sort and trash leave it alone; in a chest crafting from chests, AutoStorage and restock always leave its last item. Likes survive death.

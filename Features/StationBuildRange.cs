@@ -28,12 +28,14 @@ internal static class StationBuildRange
         _rangeMeters = config.Bind(
             "Building",
             "StationBuildRangeMeters",
-            40f,
+            100f,
             new ConfigDescription(
                 "Build range of every crafting station, in meters, before any bonus from station upgrades. Vanilla " +
-                "is 20 (artisan table 40); this setting never shrinks a range.",
-                // Only loaded stations count, and the lowest Simulation Distance loads only 64 m around the player.
-                new AcceptableValueRange<float>(1f, 64f)));
+                "is 20 (artisan table 40); this setting never shrinks a range. Only stations the game has loaded " +
+                "count: the default Simulation Distance loads at least 128 m around you, the lowest only 64 m.",
+                // ZNetScene creates objects in the zones within NearSimulationDistance of the player's 64 m zone:
+                // 2 (5x5 zones) by default, 1 at the lowest setting.
+                new AcceptableValueRange<float>(1f, 128f)));
     }
 
     private static void Prefix(CraftingStation __instance, out float __state)
