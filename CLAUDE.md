@@ -22,8 +22,9 @@ Features may be client-side, server-side or both; each one says which in `thunde
   `BepInEx/plugins`, run `valheim_server.exe -nographics -batchmode -name t -port 2456 -world t -password tttttttt`,
   then check `BepInEx/LogOutput.log` for `Loading [ValheimUtilsByAi` and any Harmony errors.
   `AsyncResourceUpload failed` in that log is headless noise.
-- No tuples (`(a, b)`, `var (x, y) = ...`): they compile against net462 but the game's Mono runtime has no
-  `System.ValueTuple`, so the plugin fails to load with a `TypeLoadException`. Use a small class instead.
+- No tuples (`(a, b)`, `var (x, y) = ...`): the game's Mono runtime has no `System.ValueTuple`, so the plugin
+  would fail to load with a `TypeLoadException`. The build takes `netstandard.dll` from the game instead of the
+  SDK facades, so tuples fail to compile (CS8179). Use a small class instead.
 - Before writing a Harmony patch, decompile the target with `ilspycmd -t <Type> <path>/assembly_valheim.dll`
   and grep for every caller. Patch the shared method, not each caller.
 

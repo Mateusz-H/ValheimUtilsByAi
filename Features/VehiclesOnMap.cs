@@ -82,7 +82,9 @@ internal static class VehiclesOnMap
             {
                 if (_sector >= sectors.Length)
                 {
-                    (_found, _sweeping) = (_sweeping, _found);
+                    var swept = _sweeping;
+                    _sweeping = _found;
+                    _found = swept;
                     _sweeping.Clear();
                     _sector = 0;
                     return;
