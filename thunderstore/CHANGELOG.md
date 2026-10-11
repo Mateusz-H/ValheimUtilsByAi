@@ -1,6 +1,11 @@
 ## Unreleased
 
 - Liked items: like a stack with Alt + right click instead of Alt + left click, which MyLittleUI uses to post the item in chat.
+- Sort items, quick stack and store all leave the rows other mods add below your inventory alone, such as Better Archery's quiver: sorting no longer empties the quiver or hides items in its hidden row, and quick stack no longer sends quiver arrows to chests.
+- Trash can: equipped gear can't be trashed; unequip it first. Trashing an equipped Better Archery quiver hid the arrows in it.
+- Farm everything: removing a grown planted bush with the Hammer drops its harvest too, not only its seed.
+- AutoStorage: a cooking station gets no new raw food while none of its output chests can be used, so food no longer burns while the output chest is open or not loaded.
+- Feeding trough: animals use a trough again after the player who had it open crashed; they ignored it until someone opened and closed it.
 
 ## 0.0.18
 

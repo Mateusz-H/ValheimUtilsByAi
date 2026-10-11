@@ -75,7 +75,8 @@ Vanilla rules stay: fire, fuel, roof, cover and biome requirements are untouched
 and cover), and nothing moves while a player has the chest open. When no output chest has room, the kilns, smelters,
 furnaces, refinery, spinning wheel and windmill drop their products on the ground as usual; a beehive, birds' nest or
 sap extractor keeps filling up to its limit, a fermenter keeps its mead, and a cooking station leaves the food on the
-station, where it burns as in vanilla. Food that AutoStorage takes off a cooking station gives no cooking skill and no
+station, where it burns as in vanilla. A cooking station gets no new raw food while none of its output chests can be
+used (open, not loaded, being handed over, removed or out of range), so only what is already on it can burn. Food that AutoStorage takes off a cooking station gives no cooking skill and no
 bonus portions, since no player picks it up, and frost foundry gear gets no crafter name.
 `[Crafting] AutoStorageMaxLinkDistance` (default 100 m) caps the link length. Pieces are only simulated near a
 player, so a chest more than roughly 64 m from its piece may not be loaded and the piece then idles.
@@ -377,8 +378,9 @@ stacks in those chests are merged, so a chest doesn't keep two half stacks of th
 With a chest open, P and the Quick stack button in the container panel fill that chest only. Quick stack replaces
 vanilla's Place stacks button, and holding E on a chest follows the same rules.
 
-Never moved: the hotbar (first row), equipped items, liked stacks, and items that don't stack (weapons, armor, tools),
-even when the chest holds the same one; Store all moves those. Carts, ships, tombstones, other players' private chests
+Never moved: the hotbar (first row), rows other mods add below your inventory (Better Archery's quiver), equipped
+items, liked stacks, and items that don't stack (weapons, armor, tools), even when the chest holds the same one; Store
+all moves those. Carts, ships, tombstones, other players' private chests
 and chests behind a ward you can't use are skipped, as for crafting from chests.
 
 The buttons sit where QuickStackStore puts them: small Q, R and S buttons under the weight in the inventory panel, and
@@ -394,8 +396,8 @@ Side: Client. Nobody else needs the mod.
 ### Store all (`[Inventory] StoreAll`, default: on)
 
 A Store all button in the container panel moves everything from your inventory into the open chest, including items
-that don't stack. It fills existing stacks first and merges partial stacks afterwards. The hotbar, equipped items,
-quest items and liked stacks stay. `[Inventory] StoreAllKey` (unbound by default) does the same while a chest is open.
+that don't stack. It fills existing stacks first and merges partial stacks afterwards. The hotbar, rows other mods add
+(Better Archery's quiver), equipped items, quest items and liked stacks stay. `[Inventory] StoreAllKey` (unbound by default) does the same while a chest is open.
 
 Side: Client. Nobody else needs the mod.
 
@@ -414,8 +416,9 @@ Side: Client. Nobody else needs the mod.
 `[Inventory] SortKey` (default O, with the inventory open) or the S button under your weight sorts your inventory.
 Partial stacks of the same item are merged, then items are laid out from the top left by kind (weapons, shields,
 tools, armor, utility, ammo, food, fish, materials, trophies, the rest) and by name. With a chest open, O and the Sort
-button in the container panel sort the chest instead. The hotbar and liked stacks keep their slots; equipped items
-move and stay equipped. Sorting twice changes nothing.
+button in the container panel sort the chest instead. The hotbar, rows other mods add below your inventory (Better
+Archery's quiver) and liked stacks keep their slots; equipped items move and stay equipped. Sorting twice changes
+nothing.
 
 Side: Client. Nobody else needs the mod.
 
@@ -423,8 +426,8 @@ Side: Client. Nobody else needs the mod.
 
 Adds a trash can under the armor value in the inventory panel. Drag an item from your inventory and click the can, or
 press `[Inventory] TrashKey` (default Delete) while dragging, then confirm to destroy it. The dragged amount goes, so
-split a stack first to destroy part of it. Liked and quest items can't be trashed. Items from a chest go into your
-inventory first.
+split a stack first to destroy part of it. Liked and quest items can't be trashed, and neither can equipped gear
+(unequip it first; equipped ammo can be trashed). Items from a chest go into your inventory first.
 
 Side: Client. Nobody else needs the mod.
 

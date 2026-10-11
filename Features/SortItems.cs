@@ -10,8 +10,9 @@ namespace ValheimUtilsByAi.Features;
 // panel sort the chest. Partial stacks of the same item are merged first, then items are laid out from the top left,
 // grouped by kind (weapons, shields, tools, armor, utility, ammo, food, fish, materials, trophies, the rest) and by name.
 //
-// Never moved: the hotbar row and liked stacks in the inventory, liked stacks in a chest. Equipped items move, they stay
-// equipped. A chest is only sorted while this game owns it, which it does while the chest is open.
+// Never moved: the hotbar row, rows other mods added below the inventory (Better Archery's quiver) and liked stacks in
+// the inventory, liked stacks in a chest. Equipped items move, they stay equipped. A chest is only sorted while this
+// game owns it, which it does while the chest is open.
 internal static class SortItems
 {
     private static ConfigEntry<bool> _enabled = null!;
@@ -37,9 +38,10 @@ internal static class SortItems
         var player = Player.m_localPlayer;
         if (player == null) return;
         var inventory = player.GetInventory();
+        var rows = QuickStack.PlayerRows(player);
         // Equipped stacks never give units away: emptied, they would stay equipped while gone from the inventory.
-        Sort(inventory, firstRow: 1,
-            stays: item => item.m_gridPos.y == 0 || LikedItems.IsLiked(inventory, item),
+        Sort(inventory, firstRow: 1, rows,
+            stays: item => item.m_gridPos.y == 0 || item.m_gridPos.y >= rows || LikedItems.IsLiked(inventory, item),
             canGive: item => !QuickStack.IsEquipped(player, item));
     }
 
@@ -48,19 +50,19 @@ internal static class SortItems
         var chest = QuickStack.OpenChest();
         if (chest == null) return;
         var inventory = chest.GetInventory();
-        Sort(inventory, firstRow: 0, stays: item => LikedItems.IsLiked(inventory, item), canGive: _ => true);
+        Sort(inventory, firstRow: 0, inventory.GetHeight(), stays: item => LikedItems.IsLiked(inventory, item), canGive: _ => true);
     }
 
     // Stacks that stay keep their slot and are never merged in the inventory; in a chest they still take units, so a
-    // liked chest stack fills up first.
-    private static void Sort(Inventory inventory, int firstRow, Func<ItemDrop.ItemData, bool> stays, Func<ItemDrop.ItemData, bool> canGive)
+    // liked chest stack fills up first. Items are laid out in rows firstRow to rows - 1.
+    private static void Sort(Inventory inventory, int firstRow, int rows, Func<ItemDrop.ItemData, bool> stays, Func<ItemDrop.ItemData, bool> canGive)
     {
         QuickStack.CancelDrag();
         var inChest = firstRow == 0;
         QuickStack.MergeStacks(inventory, item => !stays(item) && canGive(item), item => inChest || !stays(item));
 
         var width = inventory.GetWidth();
-        var height = inventory.GetHeight();
+        var height = rows;
         var taken = new bool[width, height];
         foreach (var item in inventory.GetAllItems())
         {

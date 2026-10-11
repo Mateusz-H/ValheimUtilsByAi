@@ -116,10 +116,12 @@ internal static class FeedingTrough
         view.InvokeRPC(owner, RequestOwnRpc);
     }
 
+    // Not the s_inUse ZDO flag: only the owner rewrites it, so after its user's game crashed with the trough open it
+    // stays set until someone opens and closes the trough. The owner refuses to hand over a trough that is open.
     private static bool Usable(Container trough)
     {
         var view = ContainerView(trough);
-        return view != null && view.IsValid() && !trough.IsInUse() && view.GetZDO().GetInt(ZDOVars.s_inUse) == 0;
+        return view != null && view.IsValid() && !trough.IsInUse();
     }
 
     // First item in the trough the animal eats, with the matching prefab passed to m_onConsumedItem.
