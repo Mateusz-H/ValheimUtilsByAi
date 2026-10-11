@@ -41,7 +41,11 @@ moot with Jötunn).
 ## 4. Fill the TODOs
 
 - `Features/<PascalName>.cs`: the `[HarmonyPatch]` target and body. Read `_enabled.Value` on every call. If game state must change for the duration of a call, save it in `__state` and restore it in a postfix. No helpers, base classes or new dependencies beyond what CLAUDE.md feature rule 5 allows.
-- Config description: one or two sentences a player understands.
+- Config description: one or two sentences a player understands, inside `Plugin.Synced(...)` as the scaffold has it,
+  also for every extra setting (`Plugin.Synced(description, new AcceptableValueRange<...>(...))`): on a server running
+  the mod the server's value applies to all players. Only keys (`KeyboardShortcut`) keep a plain description.
+  `SettingChanged` handlers also run on connect and disconnect (CLAUDE.md feature rule 2), so null-check the local
+  player and UI there.
 - `thunderstore/README.md` stub: what changes, what stays vanilla, Side, whether other players need the mod.
 - `thunderstore/CHANGELOG.md` bullet: one line.
 - First server-side feature only: add `"server-side"` to categories in `thunderstore.toml`. New gameplay area: add its slug (`building`, `gear`, `enemies`, ...).

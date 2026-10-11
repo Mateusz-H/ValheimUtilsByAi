@@ -57,6 +57,10 @@ chest left `inUse`, an RPC answer swallowed, a static list never cleared?
 ## 5. Config and game state
 
 - The toggle and every other setting work when changed in game, both ways.
+- Every setting except keys is bound with `Plugin.Synced`, so the server's value applies to all players. Each
+  `SettingChanged` handler also runs when the server's values arrive during the connection handshake (before the
+  player spawns) and when the player's own come back on disconnect (scene being torn down): no local player, map or
+  inventory UI then. A value read only once (at bind or prefab registration) never follows the server.
 - Prefab fields, shared statics, `ObjectDB` or `ZNetScene` changed by the feature: restored when the toggle goes off?
   Restored when the patched method throws (a postfix does not run on an exception; use a `Finalizer`)?
 - `__state` saved in a prefix and restored only in a postfix.
