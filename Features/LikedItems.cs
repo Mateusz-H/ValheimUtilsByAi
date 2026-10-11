@@ -163,36 +163,39 @@ internal static class LikedItems
     [HarmonyPatch(typeof(InventoryGrid), "UpdateGui")]
     private static class DrawBorders
     {
-        private static void Postfix(Player player, Inventory ___m_inventory, List<InventoryElement> ___m_elements)
+        private static void Postfix(Inventory ___m_inventory, List<InventoryElement> ___m_elements)
         {
-            foreach (var element in ___m_elements) SetBorder(element, false);
             var inventory = ___m_inventory;
             var gui = InventoryGui.instance;
-            if (!_enabled.Value || inventory == null || gui == null) return;
-            // The player grid gets the player; the container grid null.
-            var liked = player != null ? InInventory : InChest;
-            var keepOthers = player == null && InTombstone(gui, inventory);
-            var width = inventory.GetWidth();
-            var unliked = false;
-            foreach (var item in inventory.GetAllItems())
+            var bordered = new bool[___m_elements.Count];
+            if (_enabled.Value && inventory != null && gui != null)
             {
-                var flag = Flag(item);
-                if (flag == null) continue;
-                if (flag != liked)
+                var liked = IsPlayerInventory(inventory) ? InInventory : InChest;
+                var keepOthers = liked == InChest && InTombstone(gui, inventory);
+                var width = inventory.GetWidth();
+                var unliked = false;
+                foreach (var item in inventory.GetAllItems())
                 {
-                    if (keepOthers) continue;
-                    Unlike(item);
-                    unliked = true;
-                    continue;
+                    var flag = Flag(item);
+                    if (flag == null) continue;
+                    if (flag != liked)
+                    {
+                        if (keepOthers) continue;
+                        Unlike(item);
+                        unliked = true;
+                        continue;
+                    }
+                    var index = item.m_gridPos.y * width + item.m_gridPos.x;
+                    if (index >= 0 && index < bordered.Length) bordered[index] = true;
                 }
-                var index = item.m_gridPos.y * width + item.m_gridPos.x;
-                if (index >= 0 && index < ___m_elements.Count) SetBorder(___m_elements[index], true);
+                // The container grid is only drawn while this game owns the chest, so this saves it.
+                if (unliked) inventory.m_onChanged?.Invoke();
             }
-            // The container grid is only drawn while this game owns the chest, so this saves it.
-            if (unliked) inventory.m_onChanged?.Invoke();
+            for (var i = 0; i < bordered.Length; i++) SetBorder(___m_elements[i], bordered[i]);
         }
     }
 
+    // Writes only changes: toggling an Image off and on every frame would rebuild the canvas every frame.
     private static void SetBorder(InventoryElement element, bool on)
     {
         var queued = element.m_queued;
@@ -200,7 +203,7 @@ internal static class LikedItems
         var found = queued.transform.Find(BorderName);
         if (found == null && !on) return;
         var border = found != null ? found.GetComponent<Image>() : CreateBorder(queued);
-        border.enabled = on;
+        if (border.enabled != on) border.enabled = on;
     }
 
     private static Image CreateBorder(Image queued)
@@ -257,8 +260,10 @@ internal static class LikedItems
 
     // ---------------------------------------------------------------- upgrades
 
-    // An upgrade replaces the item with a new one, made by this AddItem overload, so the like is copied over.
-    private static bool _likeUpgrade;
+    // An upgrade replaces the item with a new one, made by this AddItem overload, so the like is copied over. The
+    // materials an upgrader station refunds when it breaks the item come through the same overload; only the item of
+    // the upgraded kind is liked. Whatever the toggle, so upgrading while it is off loses no like.
+    private static string? _upgradeLiked;
 
     [HarmonyPatch(typeof(InventoryGui), "DoCrafting")]
     private static class KeepLikeOnUpgrade
@@ -266,11 +271,10 @@ internal static class LikedItems
         private static void Prefix(InventoryGui __instance)
         {
             var item = CraftUpgradeItem(__instance);
-            var player = Player.m_localPlayer;
-            _likeUpgrade = item != null && player != null && IsLiked(player.GetInventory(), item);
+            _upgradeLiked = item != null && Flag(item) == InInventory ? item.m_shared.m_name : null;
         }
 
-        private static void Finalizer() => _likeUpgrade = false;
+        private static void Finalizer() => _upgradeLiked = null;
     }
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(string), typeof(int), typeof(int), typeof(int),
@@ -279,7 +283,80 @@ internal static class LikedItems
     {
         private static void Postfix(ItemDrop.ItemData? __result)
         {
-            if (_likeUpgrade && __result != null) __result.m_customData[Key] = InInventory;
+            if (_upgradeLiked != null && __result != null && __result.m_shared.m_name == _upgradeLiked)
+                __result.m_customData[Key] = InInventory;
         }
+    }
+
+    // ---------------------------------------------------------------- merges into the inventory
+
+    // Vanilla merges keep the receiving stack's data, so liked units merged into another stack would lose the like:
+    // Take all on a tombstone (Inventory.MoveAll) merges into stacks picked up since respawning. Moving into the
+    // player's inventory, the stack that received units of a liked stack is liked. Whatever the toggle, so nothing is
+    // lost while it is off.
+    // A class, not a tuple: the game's runtime has no System.ValueTuple.
+    private sealed class LikedSource
+    {
+        public readonly ItemDrop.ItemData Item;
+        public readonly int Stack;
+        public readonly Vector2i Slot;
+        public LikedSource(ItemDrop.ItemData item) { Item = item; Stack = item.m_stack; Slot = item.m_gridPos; }
+    }
+
+    private static List<LikedSource>? LikedSources(Inventory to, IEnumerable<ItemDrop.ItemData> items)
+    {
+        if (!IsPlayerInventory(to)) return null;
+        List<LikedSource>? sources = null;
+        foreach (var item in items)
+        {
+            if (Flag(item) == InInventory) (sources ??= new List<LikedSource>()).Add(new LikedSource(item));
+        }
+        return sources;
+    }
+
+    // slot: where a positional move put the units; null for MoveAll, which tries the item's own slot, then any stack.
+    private static void Relike(Inventory to, List<LikedSource>? sources, Vector2i? slot)
+    {
+        if (sources == null) return;
+        foreach (var source in sources)
+        {
+            var item = source.Item;
+            // Nothing moved, or the object itself moved and is still liked.
+            if (item.m_stack >= source.Stack && item.m_stack > 0 || to.ContainsItem(item)) continue;
+            var at = slot ?? source.Slot;
+            var target = to.GetItemAt(at.x, at.y);
+            if (target == null || !QuickStack.SameStack(target, item))
+                target = slot == null ? to.GetAllItems().Find(i => QuickStack.SameStack(i, item)) : null;
+            if (target != null) target.m_customData[Key] = InInventory;
+        }
+    }
+
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveAll))]
+    private static class KeepLikeOnMoveAll
+    {
+        private static void Prefix(Inventory __instance, Inventory fromInventory, out List<LikedSource>? __state) =>
+            __state = LikedSources(__instance, fromInventory.GetAllItems());
+
+        private static void Postfix(Inventory __instance, List<LikedSource>? __state) => Relike(__instance, __state, null);
+    }
+
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveItemToThis), typeof(Inventory), typeof(ItemDrop.ItemData))]
+    private static class KeepLikeOnMove
+    {
+        private static void Prefix(Inventory __instance, ItemDrop.ItemData item, out List<LikedSource>? __state) =>
+            __state = LikedSources(__instance, new[] { item });
+
+        private static void Postfix(Inventory __instance, List<LikedSource>? __state) => Relike(__instance, __state, null);
+    }
+
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveItemToThis), typeof(Inventory), typeof(ItemDrop.ItemData),
+        typeof(int), typeof(int), typeof(int))]
+    private static class KeepLikeOnPositionalMove
+    {
+        private static void Prefix(Inventory __instance, ItemDrop.ItemData item, out List<LikedSource>? __state) =>
+            __state = LikedSources(__instance, new[] { item });
+
+        private static void Postfix(Inventory __instance, int x, int y, List<LikedSource>? __state) =>
+            Relike(__instance, __state, new Vector2i(x, y));
     }
 }

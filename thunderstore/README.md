@@ -347,10 +347,10 @@ in its tooltip. Alt + left click again unlikes it.
   so quick stack keeps sending it there. Sort leaves it in its slot and fills it up first.
 
 The like is stored in the item itself, so it survives logging out and dying: what you take back from your tombstone is
-still liked. Splitting a liked stack gives two liked stacks, and upgrading a liked item keeps the like. Moving a liked
-item between your inventory and a chest by hand unlikes it, since a like in one place means nothing in the other.
-Items you pick up merge into a liked stack as usual; once it is full the rest lands in a normal stack, which quick stack
-stores.
+still liked, also when it merges into a stack you picked up since (that stack becomes liked). Splitting a liked stack
+gives two liked stacks, and upgrading a liked item keeps the like. Moving a liked item between your inventory and a
+chest by hand unlikes it, since a like in one place means nothing in the other. Items you pick up merge into a liked
+stack as usual; once it is full the rest lands in a normal stack, which quick stack stores.
 
 Side: Client. Nobody else needs the mod. Players without it don't see the likes, and their own crafting takes from
 liked chest stacks like from any other.

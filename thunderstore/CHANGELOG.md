@@ -6,6 +6,7 @@
 - Restock: L or a button fills partial stacks of ammo, food and potions from nearby chests.
 - Sort items: O or a button sorts the inventory or the open chest by kind and name and merges partial stacks; the hotbar and liked items keep their slots.
 - Trash can: destroy a dragged item with the trash can in the inventory panel or the Delete key, after a confirmation.
+- Craft and build from nearby containers: a liked chest stack keeps its last item. A chest the game still marks as open after its user crashed is asked for again instead of being skipped (its owner still refuses while it really is open).
 
 ## 0.0.17
 

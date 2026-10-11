@@ -120,7 +120,12 @@ internal static class QuickStack
         {
             var player = Player.m_localPlayer;
             if (!_enabled.Value || player == null || fromInventory != player.GetInventory()) return true;
-            __result = Store(player, new List<Inventory> { __instance }, 0, everything: false);
+            // A tombstone's stacks are not merged: its liked stacks still carry the inventory's like, which counts as
+            // unliked in a chest, so they would be poured into others.
+            var gui = InventoryGui.instance;
+            var open = gui != null ? CurrentContainer(gui) : null;
+            var tombstone = open != null && open.GetInventory() == __instance && open.GetComponent<TombStone>() != null;
+            __result = Store(player, new List<Inventory> { __instance }, 0, everything: false, merge: !tombstone);
             if (Game.instance != null) Game.instance.IncrementPlayerStat(PlayerStatType.PlaceStacks);
             return false;
         }
@@ -129,7 +134,7 @@ internal static class QuickStack
     // Moves the player's movable stackable items into the chests in order, each only into chests already holding an
     // item of that name, merges the chests' partial stacks and reports. With everything (StoreAll) every movable item
     // goes, into any chest.
-    internal static int Store(Player player, List<Inventory> chests, int busy, bool everything)
+    internal static int Store(Player player, List<Inventory> chests, int busy, bool everything, bool merge = true)
     {
         CancelDrag();
         var inventory = player.GetInventory();
@@ -152,7 +157,7 @@ internal static class QuickStack
                 any = true;
                 if (!inventory.ContainsItem(item)) items.RemoveAt(i--);
             }
-            if (any) MergeStacks(chest, item => !LikedItems.IsLiked(chest, item), _ => true);
+            if (any && merge) MergeStacks(chest, item => !LikedItems.IsLiked(chest, item), _ => true);
         }
         var text = total == 0 ? everything ? "Nothing to store" : "Nothing to quick stack"
             : moved == total ? $"Stored {Items(total)}"
@@ -172,8 +177,17 @@ internal static class QuickStack
 
     // Quick stack and store all never move the hotbar row, equipped or quest items, or liked stacks.
     internal static bool CanMove(Player player, ItemDrop.ItemData item) =>
-        item.m_gridPos.y > 0 && !item.m_equipped && !player.IsItemEquiped(item) && !item.m_shared.m_questItem &&
+        item.m_gridPos.y > 0 && !IsEquipped(player, item) && !item.m_shared.m_questItem &&
         !LikedItems.IsLiked(player.GetInventory(), item);
+
+    private static readonly AccessTools.FieldRef<Humanoid, ItemDrop.ItemData?> HiddenLeftItem =
+        AccessTools.FieldRefAccess<Humanoid, ItemDrop.ItemData?>("m_hiddenLeftItem");
+    private static readonly AccessTools.FieldRef<Humanoid, ItemDrop.ItemData?> HiddenRightItem =
+        AccessTools.FieldRefAccess<Humanoid, ItemDrop.ItemData?>("m_hiddenRightItem");
+
+    // Weapons put on the back at a crafting station are unequipped until the player walks away (HideHandItems).
+    internal static bool IsEquipped(Player player, ItemDrop.ItemData item) =>
+        item.m_equipped || player.IsItemEquiped(item) || HiddenLeftItem(player) == item || HiddenRightItem(player) == item;
 
     // Inventory.FindFreeStackItem's rule for stacks AddItem merges.
     internal static bool SameStack(ItemDrop.ItemData a, ItemDrop.ItemData b) =>
@@ -334,7 +348,11 @@ internal static class QuickStack
     // ignored.
     internal static void WithChests(List<Container> chests, Action<List<Container>, int> run)
     {
-        if (_job != null) return;
+        if (_job != null)
+        {
+            if (Player.m_localPlayer != null) Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Still waiting for chests, try again");
+            return;
+        }
         var usable = new List<Container>();
         var waiting = new List<Container>();
         var busy = 0;
@@ -374,6 +392,13 @@ internal static class QuickStack
         if (Chat.instance != null && Chat.instance.HasFocus()) return false;
         if (TextViewer.instance != null && TextViewer.instance.IsVisible()) return false;
         return Hud.instance == null || !Hud.instance.m_buildUi.SearchFieldFocused;
+    }
+
+    // A job from the last session would run on the next one's first frame, against chests that are gone.
+    [HarmonyPatch(typeof(Game), "Shutdown")]
+    private static class DropJobOnShutdown
+    {
+        private static void Prefix() => _job = null;
     }
 
     [HarmonyPatch(typeof(Player), "Update")]

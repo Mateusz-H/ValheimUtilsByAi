@@ -69,8 +69,9 @@ internal static class Restock
             player.Message(MessageHud.MessageType.Center, "Nothing to restock");
             return;
         }
-        var chests = QuickStack.NearbyChests(_radius.Value, inventory =>
-            wanted.Any(w => LikedItems.CountAvailable(inventory, w.m_shared.m_name, w.m_quality) > 0));
+        // Fill's own rule, so no chest is asked for that it wouldn't take from.
+        var chests = QuickStack.NearbyChests(_radius.Value, inventory => inventory.GetAllItems().Any(source =>
+            source.m_stack > LikedItems.Reserved(source) && wanted.Exists(w => QuickStack.SameStack(source, w))));
         QuickStack.WithChests(chests, (owned, busy) =>
         {
             var p = Player.m_localPlayer;

@@ -40,7 +40,7 @@ internal static class SortItems
         // Equipped stacks never give units away: emptied, they would stay equipped while gone from the inventory.
         Sort(inventory, firstRow: 1,
             stays: item => item.m_gridPos.y == 0 || LikedItems.IsLiked(inventory, item),
-            canGive: item => !item.m_equipped && !player.IsItemEquiped(item));
+            canGive: item => !QuickStack.IsEquipped(player, item));
     }
 
     private static void SortOpenChest()

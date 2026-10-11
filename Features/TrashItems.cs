@@ -50,12 +50,39 @@ internal static class TrashItems
     }
 
     private static Pending? _pending;
+    private static PopupBase? _popup;
+
+    private static readonly System.Reflection.FieldInfo PopupInstance = AccessTools.Field(typeof(UnifiedPopup), "instance");
+    private static readonly System.Reflection.FieldInfo PopupStack = AccessTools.Field(typeof(UnifiedPopup), "popupStack");
+
+    private static System.Collections.Generic.Stack<PopupBase>? Popups()
+    {
+        var instance = PopupInstance.GetValue(null) as UnifiedPopup;
+        return instance != null ? PopupStack.GetValue(instance) as System.Collections.Generic.Stack<PopupBase> : null;
+    }
+
+    // Our question is still up, or waiting under another popup. A new session has a new, empty popup stack.
+    private static bool Asking()
+    {
+        var popups = Popups();
+        if (_popup != null && (popups == null || !popups.Contains(_popup))) _popup = null;
+        return _popup != null;
+    }
+
+    // UnifiedPopup.Pop pops whatever is on top, which may be a popup opened over ours (an accepted invite asks to log
+    // out). Ours then stays until its own Yes or No.
+    private static void PopOurs()
+    {
+        if (!Asking() || Popups()!.Peek() != _popup) return;
+        UnifiedPopup.Pop();
+        _popup = null;
+    }
 
     private static void TrashDragged()
     {
         var gui = InventoryGui.instance;
         var player = Player.m_localPlayer;
-        if (!_enabled.Value || gui == null || player == null || _pending != null || DragGo(gui) == null) return;
+        if (!_enabled.Value || gui == null || player == null || _pending != null || Asking() || DragGo(gui) == null) return;
         var item = DragItem(gui);
         var inventory = DragInventory(gui);
         if (item == null || inventory != player.GetInventory() || !inventory.ContainsItem(item)) return;
@@ -73,13 +100,14 @@ internal static class TrashItems
         QuickStack.CancelDrag();
         _pending = new Pending(item, amount);
         var name = Localization.instance.Localize(item.m_shared.m_name);
-        UnifiedPopup.Push(new YesNoPopup("Trash", $"Destroy {amount} x {name}? This can't be undone.", Confirm, Cancel,
-            localizeText: false));
+        _popup = new YesNoPopup("Trash", $"Destroy {amount} x {name}? This can't be undone.", Confirm, Cancel,
+            localizeText: false);
+        UnifiedPopup.Push(_popup);
     }
 
     private static void Confirm()
     {
-        UnifiedPopup.Pop();
+        PopOurs();
         var pending = _pending;
         _pending = null;
         var player = Player.m_localPlayer;
@@ -103,7 +131,7 @@ internal static class TrashItems
 
     private static void Cancel()
     {
-        UnifiedPopup.Pop();
+        PopOurs();
         _pending = null;
     }
 
@@ -115,7 +143,7 @@ internal static class TrashItems
         {
             if (_pending == null) return;
             _pending = null;
-            if (UnifiedPopup.IsVisible()) UnifiedPopup.Pop();
+            PopOurs();
         }
     }
 

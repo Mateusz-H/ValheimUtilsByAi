@@ -131,7 +131,7 @@ internal static class CraftFromContainers
         for (var i = Chests.Count - 1; i >= 0; i--)
         {
             var chest = Chests[i];
-            if (chest == null) { Chests.RemoveAt(i); RequestedByUs.Remove(chest!); continue; }
+            if (chest == null) { Chests.RemoveAt(i); RequestedByUs.Remove(chest!); OpenedAt.Remove(chest!); Refused.Remove(chest!); continue; }
             var view = ContainerView(chest);
             if (!view.IsValid() || Vector3.Distance(chest.transform.position, position) > radius) continue;
             if (!chest.GetComponent<Piece>().IsPlacedByPlayer() || !HasAccess(chest, playerID)) continue;
@@ -149,11 +149,11 @@ internal static class CraftFromContainers
     // Open in another player's UI: its contents are about to change and vanilla won't hand it over.
     private static bool OpenElsewhere(ZNetView view) => view.GetZDO().GetInt(ZDOVars.s_inUse) == 1;
 
-    // Not owned here and open in another player's UI: it can be neither edited nor asked for.
+    // Gone, or not owned here and its owner refused our last request for it: another player has it open.
     internal static bool Busy(Container chest)
     {
         var view = ContainerView(chest);
-        return view == null || !view.IsValid() || (!view.IsOwner() && OpenElsewhere(view));
+        return view == null || !view.IsValid() || (!view.IsOwner() && Refused.Contains(chest));
     }
 
     private static bool Countable(Container chest, bool countNotOwned)
@@ -396,7 +396,9 @@ internal static class CraftFromContainers
         if (!Active(player)) return;
         foreach (var chest in ChestsInRange())
         {
-            if (!Busy(chest) && !IsOwned(chest) && HoldsAny(LoadedInventory(chest), requirements)) RequestChest(chest);
+            var view = ContainerView(chest);
+            if (view == null || !view.IsValid() || view.IsOwner()) continue;
+            if (HoldsAny(LoadedInventory(chest), requirements)) RequestChest(chest);
         }
     }
 
@@ -408,8 +410,12 @@ internal static class CraftFromContainers
         var view = ContainerView(chest);
         if (player == null || view == null || !view.IsValid()) return false;
         if (view.IsOwner()) return true;
-        // Owner 0: the server assigns one within a few seconds, and an RPC to 0 would go to every peer.
-        if (view.GetZDO().GetOwner() == 0 || OpenElsewhere(view)) return false;
+        if (OpenedAt.TryGetValue(chest, out var openedAt) && Time.time - openedAt < OpenAnswerTimeout) return true;
+        // Owner 0: the server assigns one within a few seconds, and an RPC to 0 would go to every peer. The ZDO's in-use
+        // flag is not checked: it stays set after a player crashes with the chest open, while the owner refuses on its
+        // own when the chest really is open.
+        if (view.GetZDO().GetOwner() == 0) return false;
+        Refused.Remove(chest);
         RequestedByUs.Add(chest);
         view.InvokeRPC("RPC_RequestOpen", player.GetPlayerID());
         return true;
@@ -430,14 +436,33 @@ internal static class CraftFromContainers
     [HarmonyPatch(typeof(Container), "RPC_OpenResponse")]
     private static class HideResponseToOurRequest
     {
-        private static bool Prefix(Container __instance) => !RequestedByUs.Remove(__instance);
+        private static bool Prefix(Container __instance, bool granted)
+        {
+            OpenedAt.Remove(__instance);
+            if (!RequestedByUs.Remove(__instance)) return true;
+            if (!granted) Refused.Add(__instance);
+            return false;
+        }
     }
+
+    // Chests whose owner refused our last request.
+    private static readonly HashSet<Container> Refused = new();
+
+    // Chests the player pressed E on, with the time, until the answer arrives. Asking for one again before that would
+    // make its owner ignore our request (it is no longer the owner) and HideResponseToOurRequest swallow the answer to
+    // the E press, so the chest would not open. RequestChest waits for that answer instead.
+    private static readonly Dictionary<Container, float> OpenedAt = new();
+    private const float OpenAnswerTimeout = 3f;
 
     // A real E press must open the chest even while our request for it is on its way.
     [HarmonyPatch(typeof(Container), nameof(Container.Interact))]
     private static class OpenOnRealInteract
     {
-        private static void Prefix(Container __instance) => RequestedByUs.Remove(__instance);
+        private static void Prefix(Container __instance, bool hold)
+        {
+            RequestedByUs.Remove(__instance);
+            if (!hold) OpenedAt[__instance] = Time.time;
+        }
     }
 
     // ---------------------------------------------------------------- holding a running craft's materials
