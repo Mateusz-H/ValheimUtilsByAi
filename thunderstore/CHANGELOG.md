@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Liked items: Alt + left click likes a stack. In your inventory quick stack, store all, sort and trash leave it alone; in a chest crafting from chests, AutoStorage and restock always leave its last item. Likes survive death.
+- Quick stack: P or a button puts stackable items into nearby chests that already hold them, nearest first, merges partial stacks there and reports how many went. Replaces vanilla's Place stacks and hold-E stacking.
+- Store all: a button in chests moves everything except the hotbar, equipped and liked items into the open chest.
+- Restock: L or a button fills partial stacks of ammo, food and potions from nearby chests.
+- Sort items: O or a button sorts the inventory or the open chest by kind and name and merges partial stacks; the hotbar and liked items keep their slots.
+- Trash can: destroy a dragged item with the trash can in the inventory panel or the Delete key, after a confirmation.
+- Craft and build from nearby containers: a liked chest stack keeps its last item. A chest the game still marks as open after its user crashed is asked for again instead of being skipped (its owner still refuses while it really is open).
+
 ## 0.0.17
 
 - Mod versions in main menu: the main menu shows this mod's version and the number of installed mods, and a Mods button lists every installed mod with its version.

@@ -68,6 +68,9 @@ the oats.
 | Frost foundry | casts, liquid frost | the finished weapons, armor and staffs |
 | Fermenter | base mead | mead |
 
+A piece never takes the last item of a liked stack in its input chests (see Liked items), so a chest can keep one ore
+or log as a marker for quick stacking.
+
 Vanilla rules stay: fire, fuel, roof, cover and biome requirements are untouched (Craft without roof lifts roof
 and cover), and nothing moves while a player has the chest open. When no output chest has room, the kilns, smelters,
 furnaces, refinery, spinning wheel and windmill drop their products on the ground as usual; a beehive, birds' nest or
@@ -194,7 +197,8 @@ it keeps the vanilla delay.
 Crafting, upgrading and building count materials in chests built by any player within `[Crafting] CraftFromContainersRadius`
 (default 15 m) of you. Your own inventory is used first, then the chests. The requirement numbers in the crafting
 panel and build menu show what you have (inventory plus chests) and what is needed, for example `25/10`, and stop
-flashing red when the chests have enough.
+flashing red when the chests have enough. A liked stack in a chest (see Liked items) always keeps its last item, which
+is not counted.
 
 What stays vanilla: carts, ships, tombstones, feeding troughs, other players' private chests and chests behind a ward
 you can't use are ignored. The item you upgrade must still be in your inventory. Recipes that take only one of
@@ -331,6 +335,87 @@ the list. The version shown is the one the mod reports to BepInEx, which can dif
 Mods that failed to load are not listed. The Escape menu in game stays vanilla.
 
 Side: Client. Nobody else needs it.
+
+### Liked items (`[Inventory] LikedItems`, default: on)
+
+Alt + left click on an item in your inventory or in an open chest likes that stack: it gets a gold border and a line
+in its tooltip. Alt + left click again unlikes it.
+
+- In your inventory a liked stack is left alone by quick stack, store all, sort (it keeps its slot) and the trash can.
+- In a chest a liked stack always keeps at least one item: crafting and building from nearby chests, AutoStorage
+  pieces and restock never take its last one. The chest keeps holding that item even after a craft used up the rest,
+  so quick stack keeps sending it there. Sort leaves it in its slot and fills it up first.
+
+The like is stored in the item itself, so it survives logging out and dying: what you take back from your tombstone is
+still liked, also when it merges into a stack you picked up since (that stack becomes liked). Splitting a liked stack
+gives two liked stacks, and upgrading a liked item keeps the like. Moving a liked item between your inventory and a
+chest by hand unlikes it, since a like in one place means nothing in the other. Items you pick up merge into a liked
+stack as usual; once it is full the rest lands in a normal stack, which quick stack stores.
+
+Side: Client. Nobody else needs the mod. Players without it don't see the likes, and their own crafting takes from
+liked chest stacks like from any other.
+
+### Quick stack (`[Inventory] QuickStack`, default: on)
+
+`[Inventory] QuickStackKey` (default P, works with the inventory closed) or the Q button under your weight moves
+stackable items from your inventory into chests within `[Inventory] QuickStackRadius` (default 10 m) that already hold
+the same item. The nearest such chest is filled first; what doesn't fit goes to the next chest holding that item.
+Items no chest holds stay with you, and the message says how much went, for example `Stored 12 of 23 items`. Partial
+stacks in those chests are merged, so a chest doesn't keep two half stacks of the same item.
+
+With a chest open, P and the Quick stack button in the container panel fill that chest only. Quick stack replaces
+vanilla's Place stacks button, and holding E on a chest follows the same rules.
+
+Never moved: the hotbar (first row), equipped items, liked stacks, and items that don't stack (weapons, armor, tools),
+even when the chest holds the same one; Store all moves those. Carts, ships, tombstones, other players' private chests
+and chests behind a ward you can't use are skipped, as for crafting from chests.
+
+The buttons sit where QuickStackStore puts them: small Q, R and S buttons under the weight in the inventory panel, and
+a column with Quick stack, Take all, Store all, Restock and Sort in the container panel. Uninstall QuickStackStore
+when using these features: both mods would add buttons and react to the same keys.
+
+Multiplayer: a chest is only filled while your game holds it. P asks for the chests holding your items, the way
+crafting from chests does, and stores once they arrive (usually a fraction of a second, at most 2 s). A chest another
+player has open is skipped and counted in the message, for example `(1 chest busy)`.
+
+Side: Client. Nobody else needs the mod.
+
+### Store all (`[Inventory] StoreAll`, default: on)
+
+A Store all button in the container panel moves everything from your inventory into the open chest, including items
+that don't stack. It fills existing stacks first and merges partial stacks afterwards. The hotbar, equipped items,
+quest items and liked stacks stay. `[Inventory] StoreAllKey` (unbound by default) does the same while a chest is open.
+
+Side: Client. Nobody else needs the mod.
+
+### Restock (`[Inventory] Restock`, default: on)
+
+`[Inventory] RestockKey` (default L, works with the inventory closed) or the R button under your weight fills partial
+stacks of ammo, food, potions and other consumables in your inventory, hotbar and equipped ammo included. It takes
+from chests within `[Inventory] RestockRadius` (default 10 m), nearest first. With a chest open, L and the Restock
+button in the container panel take from that chest only. Only stacks that would merge are used (same item and
+quality), and liked chest stacks keep their last item. Multiplayer works as for quick stack.
+
+Side: Client. Nobody else needs the mod.
+
+### Sort items (`[Inventory] SortItems`, default: on)
+
+`[Inventory] SortKey` (default O, with the inventory open) or the S button under your weight sorts your inventory.
+Partial stacks of the same item are merged, then items are laid out from the top left by kind (weapons, shields,
+tools, armor, utility, ammo, food, fish, materials, trophies, the rest) and by name. With a chest open, O and the Sort
+button in the container panel sort the chest instead. The hotbar and liked stacks keep their slots; equipped items
+move and stay equipped. Sorting twice changes nothing.
+
+Side: Client. Nobody else needs the mod.
+
+### Trash can (`[Inventory] TrashItems`, default: on)
+
+Adds a trash can under the armor value in the inventory panel. Drag an item from your inventory and click the can, or
+press `[Inventory] TrashKey` (default Delete) while dragging, then confirm to destroy it. The dragged amount goes, so
+split a stack first to destroy part of it. Liked and quest items can't be trashed. Items from a chest go into your
+inventory first.
+
+Side: Client. Nobody else needs the mod.
 
 ## Install
 
