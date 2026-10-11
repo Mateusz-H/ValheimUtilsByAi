@@ -159,12 +159,19 @@ internal static class AutoStorage
         }
     }
 
+    private static readonly AccessTools.FieldRef<InventoryGui, Container?> CurrentContainer =
+        AccessTools.FieldRefAccess<InventoryGui, Container?>("m_currentContainer");
+
     // Runs on the chest's owner, which hands the chest over only while nobody has it open, like vanilla
-    // Container.RPC_RequestOpen. Only the owner hands over, so two peers never edit the chest at once.
+    // Container.RPC_RequestOpen. Only the owner hands over, so two peers never edit the chest at once. A chest this
+    // player is opening counts as open too: it is marked in use only by the first InventoryGui frame after the open
+    // answer, and handing it over in between hid its panel.
     private static void RPC_RequestOwn(Container chest, long sender)
     {
         var view = ContainerView(chest);
         if (!view.IsValid() || !view.IsOwner() || chest.IsInUse()) return;
+        var gui = InventoryGui.instance;
+        if (gui != null && CurrentContainer(gui) == chest) return;
         ZDOMan.instance.ForceSendZDO(sender, view.GetZDO().m_uid);
         view.GetZDO().SetOwner(sender);
     }
