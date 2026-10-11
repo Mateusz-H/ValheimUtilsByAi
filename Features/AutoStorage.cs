@@ -558,6 +558,9 @@ internal static class AutoStorage
             }
 
             if (__instance.m_requireFire && !CookingIsFireLit(__instance)) return;
+            // Linked output chests that are all open, unloaded or still being handed over can't take the cooked food,
+            // which would burn on the station.
+            if (outputs.Count == 0 && ReadChestPositions(zdo, Direction.Output) is { Count: > 0 }) return;
             while (CookingFreeSlot(__instance) >= 0)
             {
                 var raw = TakeCookable(inputs, __instance, CookingFindCookable);

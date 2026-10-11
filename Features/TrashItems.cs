@@ -7,9 +7,9 @@ using UnityEngine.UI;
 namespace ValheimUtilsByAi.Features;
 
 // A trash can under the armor value in the inventory panel. Clicking it while dragging an item from the inventory, or
-// pressing Delete while dragging, asks for confirmation and destroys the dragged amount. Liked and quest items are
-// refused. The drag ends when the question opens, so nothing can be dropped behind it; Yes destroys what was dragged
-// if it is still there, as it was.
+// pressing Delete while dragging, asks for confirmation and destroys the dragged amount. Liked, quest and equipped
+// unstackable items are refused. The drag ends when the question opens, so nothing can be dropped behind it; Yes
+// destroys what was dragged if it is still there, as it was.
 //
 // The can is a copy of the panel's "Armor" display, 78 px lower, the way QuickStackStore builds its own.
 internal static class TrashItems
@@ -35,7 +35,8 @@ internal static class TrashItems
             "TrashItems",
             true,
             "Adds a trash can to the inventory panel. Click it while dragging an item from your inventory, or press " +
-            "TrashKey while dragging, to destroy that item after a confirmation. Liked items can't be trashed.");
+            "TrashKey while dragging, to destroy that item after a confirmation. Liked items and equipped gear can't be " +
+            "trashed.");
         _key = config.Bind("Inventory", "TrashKey", new KeyboardShortcut(KeyCode.Delete),
             "Key that trashes the item you are dragging.");
     }
@@ -94,6 +95,14 @@ internal static class TrashItems
         if (LikedItems.IsLiked(inventory, item))
         {
             player.Message(MessageHud.MessageType.Center, "Liked items can't be trashed");
+            return;
+        }
+        // Unequipping here would skip the checks of the game's own unequip, such as Better Archery refusing to take off
+        // a quiver that still holds arrows (they would be hidden until another quiver is equipped). Weapons put away
+        // with R or at a station are already unequipped (Humanoid.HideHandItems), so they can be trashed.
+        if (!QuickStack.Stackable(item) && (item.m_equipped || player.IsItemEquiped(item)))
+        {
+            player.Message(MessageHud.MessageType.Center, "Unequip it first");
             return;
         }
         var amount = Mathf.Clamp(DragAmount(gui), 1, item.m_stack);

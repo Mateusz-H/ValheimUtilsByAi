@@ -206,6 +206,24 @@ internal static class FarmEverything
         }
     }
 
+    // Removing a planted one with the Hammer (or vanilla Remove with the Cultivator) refunds its seed through
+    // DropResources right after Player.RemovePiece claims it, then destroys it with its harvest. A grown one is picked
+    // first, as when uprooting; as the owner, the pick runs right here. Not gated on the config: it only keeps the
+    // harvest of plants that already exist.
+    [HarmonyPatch(typeof(Piece), nameof(Piece.DropResources))]
+    private static class HarvestOnRemove
+    {
+        private static void Prefix(Piece __instance)
+        {
+            var player = Player.m_localPlayer;
+            if (Plants.Count == 0 || player == null) return;
+            var pickable = __instance.GetComponent<Pickable>();
+            if (pickable == null || pickable.GetPicked() || !Plants.ContainsKey(Utils.GetPrefabName(pickable.gameObject.name))) return;
+            var view = pickable.GetComponent<ZNetView>();
+            if (view != null && view.IsValid() && view.IsOwner()) pickable.Interact(player, false, false);
+        }
+    }
+
     // Runs on the owner once a minute per planted clone; writing the instance field keeps config edits live.
     [HarmonyPatch(typeof(Pickable), "UpdateRespawn")]
     private static class PlantedRegrowTime

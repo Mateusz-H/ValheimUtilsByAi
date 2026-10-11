@@ -16,7 +16,8 @@ namespace ValheimUtilsByAi.Features;
 // them into that chest only. Vanilla's Place stacks and hold-E stacking (both Inventory.StackAll) follow the same rules.
 // Partial stacks of the same item in a chest are merged afterwards.
 //
-// Never moved: the hotbar row, equipped items, quest items and liked stacks (LikedItems).
+// Never moved: the hotbar row, rows other mods add below the inventory (Better Archery's quiver), equipped items, quest
+// items and liked stacks (LikedItems).
 //
 // Chests are those CraftFromContainers may use (built by a player, accessible, not carts, ships or tombstones). In
 // multiplayer a chest is only edited while this game owns it: chests holding one of the items are asked for the way
@@ -175,10 +176,21 @@ internal static class QuickStack
 
     internal static bool Stackable(ItemDrop.ItemData item) => item.m_shared.m_maxStackSize > 1;
 
-    // Quick stack and store all never move the hotbar row, equipped or quest items, or liked stacks.
+    // Quick stack and store all never move the hotbar row, rows other mods added, equipped or quest items, or liked
+    // stacks.
     internal static bool CanMove(Player player, ItemDrop.ItemData item) =>
-        item.m_gridPos.y > 0 && !IsEquipped(player, item) && !item.m_shared.m_questItem &&
-        !LikedItems.IsLiked(player.GetInventory(), item);
+        item.m_gridPos.y > 0 && item.m_gridPos.y < PlayerRows(player) && !IsEquipped(player, item) &&
+        !item.m_shared.m_questItem && !LikedItems.IsLiked(player.GetInventory(), item);
+
+    // Rows of the player's own grid. Player.OnSpawned and SetInventorySize save that count as "invrows"; mods such as
+    // Better Archery add rows below it (a hidden row and its quiver row) and manage those slots themselves.
+    internal static int PlayerRows(Player player)
+    {
+        var height = player.GetInventory().GetHeight();
+        return player.TryGetUniqueKeyValue("invrows", out var value) && int.TryParse(value, out var rows)
+            ? Mathf.Clamp(rows, 1, height)
+            : height;
+    }
 
     private static readonly AccessTools.FieldRef<Humanoid, ItemDrop.ItemData?> HiddenLeftItem =
         AccessTools.FieldRefAccess<Humanoid, ItemDrop.ItemData?>("m_hiddenLeftItem");
