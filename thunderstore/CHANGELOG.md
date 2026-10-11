@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Auto repair at nearby stations: opening a crafting station also repairs what stations within `AutoRepairNearbyMeters` (default 15 m) can repair, such as the forge next to your workbench.
 - Liked items: Alt + left click likes a stack. In your inventory quick stack, store all, sort and trash leave it alone; in a chest crafting from chests, AutoStorage and restock always leave its last item. Likes survive death.
 - Quick stack: P or a button puts stackable items into nearby chests that already hold them, nearest first, merges partial stacks there and reports how many went. Replaces vanilla's Place stacks and hold-E stacking.
 - Store all: a button in chests moves everything except the hotbar, equipped and liked items into the open chest.

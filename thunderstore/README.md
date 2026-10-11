@@ -162,9 +162,15 @@ Side: Client. Other players and the server don't need the mod.
 ### Auto repair at crafting stations (`[Crafting] AutoRepair`, default: on)
 
 Opening a crafting station (workbench, forge, black forge, ...) repairs every worn item in your inventory (equipped
-or not) that the station can repair, all at once with a single repair sound, so you no longer click the hammer
+or not) that the station can repair, all at once with one repair sound, so you no longer click the hammer
 button once per item. Torches can't be repaired, as in vanilla. Which station repairs which item, the station
 level requirement and the crafting skill gain are vanilla too.
+
+When the station you open has a repair button, crafting stations within `[Crafting] AutoRepairNearbyMeters` of you
+(default 15 m, range 0-50) repair at the same time, so opening the workbench also repairs the armor only the forge
+next to it can repair. Each station follows its
+own vanilla rules: its item types, its level (counting its upgrades), and a roof or a lit fire where it needs one. Each
+station that repaired something plays its repair sound. Set it to 0 to repair only at the station you open.
 
 Side: Client. Other players and the server don't need the mod.
 
