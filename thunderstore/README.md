@@ -460,23 +460,26 @@ bigger chest down to its last filled row and can take everything out, but can't 
 
 World updates (where animals and other creatures are, doors, chest contents, built pieces) travel between each game
 and the server at up to `[Network] NetworkSendRate` KB/s per player (default 400, 150-1024) instead of vanilla's fixed
-150 KB/s. How much the game hands to the network at once grows with it, from 10 KB to the rate divided by 15 (about
-27 KB at the default), the same ratio as vanilla, so a base full of animals or several players building at once no
-longer make creatures jump or freeze while updates wait in line.
+150 KB/s. How much the game may have on its way at once grows with it, from 10 KB to the rate divided by 15 (about
+27 KB at the default), the same ratio as vanilla. That 10 KB, not the rate, is what holds vanilla back: with a 50 ms
+ping a player gets about 70 KB/s of updates, enough for some 20 animals on the move before the far ones start to
+freeze and jump. With the default it is about 200 KB/s, with 1024 about 500 KB/s.
 
 The rate is a ceiling: Steam only sends that much while there is something to send. The server's upload carries it
 once per player online, so 4 players at the default can need up to about 13 Mbit/s; lower it on a home connection
 with a slow upload. The same rate applies to what players send: a player whose upload is slower than the rate and
 whose game runs a busy base (usually the first one there) can lag, and only the server's value counts, so lower it
-for everyone then. A changed value is applied to open connections right away; reconnecting applies it for sure.
+for everyone then. A changed value applies to open connections right away.
 
 What stays vanilla: how often updates are sent (at most 20 times a second), which objects are sent and in what order,
-and no compression. Servers started with `-crossplay` use a different network layer without a rate to raise, so there
-the feature changes nothing.
+and no compression. Other mods that wait for room on the network, such as Jötunn's and ServerSync's settings sync,
+see as much room as in vanilla. Servers started with `-crossplay` use a different network layer without a rate to
+raise, so there the feature changes nothing. Don't combine it with another mod that raises the same limits (Better
+Networking, Network): their windows add up and the last one to set the rate wins.
 
 Side: Both. Each game speeds up only what it sends: the server what goes to players, each player what goes to the
 server. Players without the mod can still join a server running it and get its faster updates, but what they send
-stays at vanilla speed.
+stays at vanilla speed, so animals whose game runs on such a player update at vanilla speed for everyone.
 
 ## Install
 
