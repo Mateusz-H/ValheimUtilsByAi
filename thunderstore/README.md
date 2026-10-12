@@ -456,6 +456,20 @@ does for its own chests; only the empty rows below it disappear until the featur
 Side: Client. Each game sizes chests for itself, so the server doesn't need the mod. A player without it sees a
 bigger chest down to its last filled row and can take everything out, but can't use the empty rows below that.
 
+### No frozen players after teleport (`[World] TeleportGhostFix`, default: on)
+
+In vanilla, when someone goes through a portal, the players left behind can keep seeing them standing frozen at
+the portal until the traveller crosses the next zone border (every 64 m) at the other end, which can take a long
+time if they stay in a base there. The server only tells a player that someone left their area when the traveller
+changes zone, and it checks where they were instead of where they are now. With this on, the server checks again with
+the new position whenever something jumps more than one zone at once, so the frozen copy disappears as soon as the
+teleport ends. The same goes for anything else that moves that far in one go.
+
+What stays vanilla: walking, riding and sailing, which never cross more than one zone at a time, and what is sent to
+each player and when.
+
+Side: Server. Players don't need the mod; in single player and on a server without the mod it does nothing.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
