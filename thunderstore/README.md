@@ -456,6 +456,28 @@ does for its own chests; only the empty rows below it disappear until the featur
 Side: Client. Each game sizes chests for itself, so the server doesn't need the mod. A player without it sees a
 bigger chest down to its last filled row and can take everything out, but can't use the empty rows below that.
 
+### Higher network bandwidth (`[Network] NetworkBandwidth`, default: on)
+
+World updates (where animals and other creatures are, doors, chest contents, built pieces) travel between each game
+and the server at up to `[Network] NetworkSendRate` KB/s per player (default 400, 150-1024) instead of vanilla's fixed
+150 KB/s. How much the game hands to the network at once grows with it, from 10 KB to the rate divided by 15 (about
+27 KB at the default), the same ratio as vanilla, so a base full of animals or several players building at once no
+longer make creatures jump or freeze while updates wait in line.
+
+The rate is a ceiling: Steam only sends that much while there is something to send. The server's upload carries it
+once per player online, so 4 players at the default can need up to about 13 Mbit/s; lower it on a home connection
+with a slow upload. The same rate applies to what players send: a player whose upload is slower than the rate and
+whose game runs a busy base (usually the first one there) can lag, and only the server's value counts, so lower it
+for everyone then. A changed value is applied to open connections right away; reconnecting applies it for sure.
+
+What stays vanilla: how often updates are sent (at most 20 times a second), which objects are sent and in what order,
+and no compression. Servers started with `-crossplay` use a different network layer without a rate to raise, so there
+the feature changes nothing.
+
+Side: Both. Each game speeds up only what it sends: the server what goes to players, each player what goes to the
+server. Players without the mod can still join a server running it and get its faster updates, but what they send
+stays at vanilla speed.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires

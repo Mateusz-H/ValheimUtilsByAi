@@ -42,6 +42,7 @@
     <Reference Include="Unity.TextMeshPro" HintPath="$(ValheimManaged)/Unity.TextMeshPro.dll" Private="false" />
     <Reference Include="assembly_guiutils" HintPath="$(ValheimManaged)/assembly_guiutils.dll" Private="false" />
     <Reference Include="Splatform" HintPath="$(ValheimManaged)/Splatform.dll" Private="false" />
+    <Reference Include="com.rlabrecque.steamworks.net" HintPath="$(ValheimManaged)/com.rlabrecque.steamworks.net.dll" Private="false" />
   </ItemGroup>
 
   <ItemGroup>

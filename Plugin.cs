@@ -54,6 +54,7 @@ public sealed class Plugin : BaseUnityPlugin
         SortItems.Bind(Config);
         TrashItems.Bind(Config);
         BiggerChests.Bind(Config);
+        NetworkBandwidth.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }

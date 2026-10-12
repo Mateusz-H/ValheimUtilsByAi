@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Higher network bandwidth: the server and players send world updates at up to 400 KB/s instead of vanilla's 150 KB/s (`[Network] NetworkSendRate`), so a base full of animals no longer makes creatures jump around.
+
 ## 0.0.19
 
 - Server config sync: on a server running the mod, every setting except keys and the main-menu mod list comes from the server's config for all players; your own file applies again on disconnect, in single player and on servers without the mod.
