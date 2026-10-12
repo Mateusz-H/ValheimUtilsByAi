@@ -1,5 +1,7 @@
 ## Unreleased
 
+- No frozen players after teleport: players who go through a portal no longer stay visible at the portal for the players left behind (vanilla bug, server-side fix).
+
 ## 0.0.19
 
 - Server config sync: on a server running the mod, every setting except keys and the main-menu mod list comes from the server's config for all players; your own file applies again on disconnect, in single player and on servers without the mod.
