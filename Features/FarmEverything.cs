@@ -12,7 +12,8 @@ namespace ValheimUtilsByAi.Features;
 // Wild berry bushes, mushrooms, thistle, dandelions and fiddlehead ferns can be uprooted with the Cultivator (the Remove button, middle
 // mouse). Each drops a seed item: a clone of the plant's own produce with the food stats removed. The seed pays for a
 // Cultivator piece cloned from the wild plant. It is placed bare and grows its first harvest after a configurable
-// number of minutes (default 1.5x the wild respawn), then keeps regrowing at that pace.
+// number of minutes (default half the wild respawn), then keeps regrowing at that pace. Vanilla saplings (crops,
+// mushrooms, trees, vines) get a minutes setting too, which scales their grow time (default half of vanilla).
 internal static class FarmEverything
 {
     private static readonly string[] WildPlants =
@@ -54,6 +55,8 @@ internal static class FarmEverything
 
     // Keyed by prefab name, under both the wild plant and its planted clone.
     private static readonly Dictionary<string, Plant> Plants = new();
+    // Keyed by sapling prefab name.
+    private static readonly Dictionary<string, ConfigEntry<int>> SaplingMinutes = new();
     private static ConfigEntry<bool> _enabled = null!;
     private static ConfigFile _config = null!;
 
@@ -66,9 +69,10 @@ internal static class FarmEverything
             true,
             Plugin.Synced(
                 "Uproot wild berry bushes, mushrooms, thistle, dandelions and fiddlehead with the Cultivator (Remove " +
-                "button) to get seeds, and plant them on cultivated ground with the Cultivator. Planted ones regrow " +
-                "slower than wild ones; minutes per plant are set below. Off: no uprooting, pieces hidden; planted " +
-                "ones keep growing."));
+                "button) to get seeds, and plant them on cultivated ground with the Cultivator. Planted ones regrow in " +
+                "half the wild time by default; minutes per plant are set below, as are the grow times of vanilla " +
+                "saplings (half of vanilla by default). Off: no uprooting, pieces hidden, saplings grow at vanilla " +
+                "speed; planted ones keep growing."));
         _enabled.SettingChanged += (_, _) =>
         {
             foreach (var plant in Plants.Values) plant.Piece.m_enabled = _enabled.Value;
@@ -112,7 +116,7 @@ internal static class FarmEverything
             var minutes = _config.Bind(
                 "World",
                 $"FarmEverything{wildName}Minutes",
-                wildMinutes > 0f ? Mathf.RoundToInt(wildMinutes * 1.5f) : 360,
+                wildMinutes > 0f ? Mathf.Max(1, Mathf.RoundToInt(wildMinutes * 0.5f)) : 120,
                 Plugin.Synced(
                     $"Minutes until a planted {wildName} grows its harvest, after planting and after each pick. " +
                     $"Wild ones take {wildMinutes:0}.",
@@ -149,6 +153,22 @@ internal static class FarmEverything
             var plant = new Plant(seed, piece, minutes, modelShrunkWhileBare);
             Plants[wildName] = plant;
             Plants[planted.name] = plant;
+        }
+
+        // Every sapling prefab loaded by now: crops, Mistlands mushrooms, trees and vines.
+        foreach (var sapling in PrefabManager.Cache.GetPrefabs(typeof(global::Plant)).Values.OfType<global::Plant>()
+                     .OrderBy(sapling => sapling.name))
+        {
+            if (sapling.m_growTime <= 0f || SaplingMinutes.ContainsKey(sapling.name)) continue;
+            SaplingMinutes[sapling.name] = _config.Bind(
+                "World",
+                $"FarmEverything{sapling.name}Minutes",
+                Mathf.Max(1, Mathf.RoundToInt(sapling.m_growTime / 60f * 0.5f)),
+                Plugin.Synced(
+                    $"Minutes until a planted {sapling.name} grows, at the earliest; the default is half of vanilla, " +
+                    $"which takes {sapling.m_growTime / 60f:0} to {sapling.m_growTimeMax / 60f:0}. Each plant picks its " +
+                    "own time in that range, which scales with this value.",
+                    new AcceptableValueRange<int>(1, 10000)));
         }
     }
 
@@ -236,6 +256,20 @@ internal static class FarmEverything
             var name = Utils.GetPrefabName(__instance.gameObject.name);
             if (Plants.TryGetValue(name, out var plant) && name == plant.Piece.name)
                 __instance.m_respawnTimeMinutes = plant.Minutes.Value;
+        }
+    }
+
+    // Vanilla saplings: the owner grows one once its seeded random time between m_growTime and m_growTimeMax has passed
+    // (Plant.SUpdate, every 10 s), and PlantGrowthTimer shows the same value. Scaling the whole range keeps each plant's
+    // own place in it, and plants already in the ground follow a changed setting.
+    [HarmonyPatch(typeof(global::Plant), "GetGrowTime")]
+    private static class SaplingGrowTime
+    {
+        private static void Postfix(global::Plant __instance, ref float __result)
+        {
+            if (!_enabled.Value || __instance.m_growTime <= 0f) return;
+            if (!SaplingMinutes.TryGetValue(Utils.GetPrefabName(__instance.gameObject.name), out var minutes)) return;
+            __result *= minutes.Value * 60f / __instance.m_growTime;
         }
     }
 
