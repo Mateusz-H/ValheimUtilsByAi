@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Plant spacing: a sapling or seed can't be planted within its grow radius of another sapling, grown crop or planted mushroom or bush, nor next to a bigger sapling it would stunt, also in PlantEasily grids; vanilla let carrots go right on top of mushrooms.
+- Farm everything: every vanilla sapling (crops, Jotun puffs, magecap, trees, vines) gets a grow time setting in minutes, `FarmEverything<sapling>Minutes`; the default 0 keeps vanilla.
+
 ## 0.0.19
 
 - Server config sync: on a server running the mod, every setting except keys and the main-menu mod list comes from the server's config for all players; your own file applies again on disconnect, in single player and on servers without the mod.

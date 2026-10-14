@@ -9,6 +9,8 @@ namespace ValheimUtilsByAi;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 [BepInDependency(Jotunn.Main.ModGuid)]
+// Loaded first when installed, so PlantSpacing can patch its grid ghosts.
+[BepInDependency("advize.PlantEasily", BepInDependency.DependencyFlags.SoftDependency)]
 // Jötunn refuses the connection, with its version window, when client and server both run this mod in different versions.
 [NetworkCompatibility(CompatibilityLevel.VersionCheckOnly, VersionStrictness.Patch)]
 // Synced settings follow the server only when it runs this mod; elsewhere every player keeps their own.
@@ -54,6 +56,7 @@ public sealed class Plugin : BaseUnityPlugin
         SortItems.Bind(Config);
         TrashItems.Bind(Config);
         BiggerChests.Bind(Config);
+        PlantSpacing.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }

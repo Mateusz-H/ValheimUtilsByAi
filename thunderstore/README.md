@@ -300,9 +300,18 @@ it too. Unlike saplings, planted ones are never raid targets and grow in any bio
 them, and the minutes setting of their owner (the player whose game is simulating them; the server's setting when it
 runs the mod) decides the regrow time. Wild plants and their respawn are untouched unless you uproot them.
 
+Vanilla saplings get a grow time setting too: `[World] FarmEverything<sapling>Minutes` (0 to 10000), for example
+`FarmEverythingsapling_carrotMinutes`, for every crop and its seed version, Jotun puffs, magecap, tree sapling and vine.
+It is the earliest the sapling grows. Each sapling still picks its own time in the vanilla range, which scales with the
+setting: carrots take 67 to 83 minutes in vanilla, 30 makes it 30 to 37.5. The default 0 keeps vanilla (crops 67,
+beech, fir and pine 50, birch 83, oak 100, vines 3; each description lists its own). A changed value also applies to
+saplings already in the ground. As with the regrow time, the owner's setting decides when a sapling grows; a player
+without the mod grows the ones they own at vanilla speed. Plant growth timer shows the time from your own setting, which
+on a server without the mod can differ from the owner's.
+
 Side: Both. The mod (and Jötunn) must be installed on the server and on every client: the seeds and planted pieces are
-new prefabs, and players without them see errors. Turning the feature off stops uprooting and hides the pieces from the
-Cultivator; already planted ones keep growing on their configured time.
+new prefabs, and players without them see errors. Turning the feature off stops uprooting, hides the pieces from the
+Cultivator and puts saplings back on vanilla grow times; already planted ones keep growing on their configured time.
 ### Plant growth timer (`[World] PlantGrowthTimer`, default: on)
 
 Hovering a planted sapling (carrots, turnips, onions, barley, flax, trees, Mistlands mushrooms, ...) adds a line
@@ -455,6 +464,25 @@ does for its own chests; only the empty rows below it disappear until the featur
 
 Side: Client. Each game sizes chests for itself, so the server doesn't need the mod. A player without it sees a
 bigger chest down to its last filled row and can take everything out, but can't use the empty rows below that.
+
+### Plant spacing (`[World] PlantSpacing`, default: on)
+
+A sapling or seed can't be planted where another planted thing reaches into its own grow radius: 0.5 m for crops and
+Jotun puffs, 0.8 m for magecap, 2 m for most tree saplings, 3 m for oak, 0.5 m for the bushes and mushrooms of Farm
+everything. Nor can it go inside the grow radius of a bigger sapling nearby, so carrots stay 3 m from an oak sapling,
+which would otherwise never grow. Planted things are saplings, grown crops (carrots, turnips, Jotun puffs, magecap, ...)
+and Farm everything's bushes and mushrooms, also while bare. The ghost turns red and placing shows vanilla's message for
+too little space. Vanilla lets you plant anywhere and only marks a crowded sapling "Not enough space" after planting,
+and its check ignores mushrooms, so carrots could go right on top of grown Jotun puffs or planted mushrooms and still
+grow. Wild pickables (stones, branches, berry bushes, mushrooms) don't count, so tree saplings still go anywhere in the
+wild; wild Jotun puffs and magecap do, since the game uses the same object for wild and grown ones. Vanilla's own check
+after planting (roof, other objects nearby) is unchanged.
+
+With PlantEasily, every ghost of its grid gets the same check: crowded ones turn red and are not planted. That needs
+PlantEasily's `PreventInvalidPlanting` (on by default). With it off, a crowded cursor ghost still refuses the whole
+click, but when the cursor one is free PlantEasily plants the red grid ghosts too.
+
+Side: Client. Your game checks your own planting; other players and the server don't need the mod.
 
 ## Install
 
