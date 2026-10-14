@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Higher network bandwidth: the server and players send world updates at up to 400 KB/s instead of vanilla's 150 KB/s (`[Network] NetworkSendRate`), so a base full of animals no longer makes creatures jump around.
+
 ## 0.0.20
 
 - Plant spacing: a sapling or seed can't be planted within its grow radius of another sapling, grown crop or planted mushroom or bush, nor next to a bigger sapling it would stunt, also in PlantEasily grids; vanilla let carrots go right on top of mushrooms.
