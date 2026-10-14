@@ -293,21 +293,24 @@ uprooted and drops one seed item (for example **Raspberries seeds**, with the be
 if it still has one. Uprooting costs stamina and Cultivator durability, like removing a piece with the hammer. Each
 seed is a new Cultivator piece (**Raspberries plant**, ...), placed on cultivated ground like any sapling. A planted one
 starts bare (mushrooms, thistle, dandelion and fiddlehead as a small version of the plant) and grows its harvest after
-`[World] FarmEverything<Prefab>Minutes` (1 to 10000; defaults: 450 for berry bushes and fiddlehead, 360 for mushrooms,
-thistle and dandelion, i.e. 1.5x the wild 300 / 240), then regrows at that pace after every pick. The harvest itself is
+`[World] FarmEverything<Prefab>Minutes` (1 to 10000; defaults: 150 for berry bushes and fiddlehead, 120 for mushrooms,
+thistle and dandelion, i.e. half the wild 300 / 240), then regrows at that pace after every pick. The harvest itself is
 vanilla. Uproot a planted one with the Cultivator to get its seed back; for planted berry bushes, hammer remove refunds
 it too. Unlike saplings, planted ones are never raid targets and grow in any biome without needing free space around
 them, and the minutes setting of their owner (the player whose game is simulating them; the server's setting when it
 runs the mod) decides the regrow time. Wild plants and their respawn are untouched unless you uproot them.
 
-Vanilla saplings get a grow time setting too: `[World] FarmEverything<sapling>Minutes` (0 to 10000), for example
+Vanilla saplings get a grow time setting too: `[World] FarmEverything<sapling>Minutes` (1 to 10000), for example
 `FarmEverythingsapling_carrotMinutes`, for every crop and its seed version, Jotun puffs, magecap, tree sapling and vine.
 It is the earliest the sapling grows. Each sapling still picks its own time in the vanilla range, which scales with the
-setting: carrots take 67 to 83 minutes in vanilla, 30 makes it 30 to 37.5. The default 0 keeps vanilla (crops 67,
-beech, fir and pine 50, birch 83, oak 100, vines 3; each description lists its own). A changed value also applies to
-saplings already in the ground. As with the regrow time, the owner's setting decides when a sapling grows; a player
-without the mod grows the ones they own at vanilla speed. Plant growth timer shows the time from your own setting, which
-on a server without the mod can differ from the owner's.
+setting: carrots take 67 to 83 minutes in vanilla, 30 makes it 30 to 37.5. The defaults are half of vanilla: crops,
+Jotun puffs and magecap 33, beech, fir and pine 25, birch 42, oak 50, vines 2 (each description lists its vanilla
+time). A changed value also applies to saplings already in the ground. As with the regrow time, the owner's setting
+decides when a sapling grows; a player without the mod grows the ones they own at vanilla speed. Plant growth timer
+shows the time from your own setting, which on a server without the mod can differ from the owner's.
+
+An existing config keeps the regrow minutes it already has (360 and 450 in earlier versions). Delete those
+`FarmEverything<Prefab>Minutes` lines, or set them, to get the new defaults.
 
 Side: Both. The mod (and Jötunn) must be installed on the server and on every client: the seeds and planted pieces are
 new prefabs, and players without them see errors. Turning the feature off stops uprooting, hides the pieces from the
