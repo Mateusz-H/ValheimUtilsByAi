@@ -59,6 +59,7 @@ public sealed class Plugin : BaseUnityPlugin
         PlantSpacing.Bind(Config);
         NetworkBandwidth.Bind(Config);
         QuickStackRepair.Bind(Config);
+        BuildInNoBuildZones.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }

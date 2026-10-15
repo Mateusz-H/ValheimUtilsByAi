@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Build at traders and spawn: place portals and other pieces and use the hoe and pickaxe next to Haldor, Hildir, the Bog Witch and the spawn stones; the traders' safe zone still keeps monsters out (`[Building] BuildInNoBuildZones`).
 - Quick stack repairs at nearby stations: quick stacking (P, the Q button or Quick stack in a chest) also repairs worn items at crafting stations within `[Crafting] AutoRepairNearbyMeters` (`[Inventory] QuickStackRepair`).
 
 ## 0.0.21

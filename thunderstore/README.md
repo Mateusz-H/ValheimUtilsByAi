@@ -525,6 +525,22 @@ Needs `[Inventory] QuickStack` on; `[Crafting] AutoRepair` can be off. `AutoRepa
 
 Side: Client. Nobody else needs the mod.
 
+### Build at traders and spawn (`[Building] BuildInNoBuildZones`, default: on)
+
+Vanilla forbids building, removing pieces and changing the ground around the traders (Haldor, Hildir, the Bog Witch)
+and at the spawn stones. With this on they work like anywhere else: put a portal next to a trader, set up a workbench,
+level the ground with the hoe or dig with the pickaxe. Most pieces still need a workbench nearby.
+
+Everything else stays vanilla: the traders' safe zone still keeps monsters out (it is separate from the no-build zone),
+the traders' own fire pits and the Bog Witch's candles can't be removed with the hammer, and the other no-build zones
+(the Fader's arena, Hildir's towers, the Deep North) stay locked. The 5 m around the respawn point in the middle of
+the spawn stones stay locked too, so nobody without a bed respawns inside a building. Ground you dig or level there
+stays as it is after you turn this off.
+
+Side: Client. Only the player who builds needs the mod, and what they build works for everyone. A player without the
+mod can't remove those pieces with the hammer, as vanilla still blocks it for them. The server doesn't need the mod;
+works on vanilla servers.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
