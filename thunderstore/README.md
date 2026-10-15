@@ -512,6 +512,19 @@ Side: Both. Each game speeds up only what it sends: the server what goes to play
 server. Players without the mod can still join a server running it and get its faster updates, but what they send
 stays at vanilla speed, so animals whose game runs on such a player update at vanilla speed for everyone.
 
+### Quick stack repairs at nearby stations (`[Inventory] QuickStackRepair`, default: on)
+
+Quick stacking (`[Inventory] QuickStackKey`, the Q button under your weight or the Quick stack button in a chest) also
+repairs your worn items, equipped or not, at the crafting stations within `[Crafting] AutoRepairNearbyMeters` of you
+(default 15 m), without opening one. In vanilla you repair only at the station you open, one item per click. Each
+station follows its vanilla repair rules, as for auto repair: its item types, its level, and a roof or a lit fire where
+it needs one; each one that repaired something plays its repair sound. The repair message shows top left so the quick
+stack message stays readable.
+
+Needs `[Inventory] QuickStack` on; `[Crafting] AutoRepair` can be off. `AutoRepairNearbyMeters` 0 repairs nothing here.
+
+Side: Client. Nobody else needs the mod.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
