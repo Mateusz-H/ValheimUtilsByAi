@@ -89,6 +89,7 @@ internal static class QuickStack
         var player = Player.m_localPlayer;
         var chest = OpenChest();
         if (player == null || chest == null) return;
+        QuickStackRepair.Run();
         Store(player, new List<Inventory> { chest.GetInventory() }, 0, everything: false);
         if (Game.instance != null) Game.instance.IncrementPlayerStat(PlayerStatType.PlaceStacks);
     }
@@ -97,6 +98,7 @@ internal static class QuickStack
     {
         var player = Player.m_localPlayer;
         if (player == null || !_enabled.Value) return;
+        QuickStackRepair.Run();
         var names = new HashSet<string>();
         foreach (var item in player.GetInventory().GetAllItems())
             if (Stackable(item) && CanMove(player, item)) names.Add(item.m_shared.m_name);

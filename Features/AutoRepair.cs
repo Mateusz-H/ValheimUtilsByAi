@@ -16,8 +16,6 @@ internal static class AutoRepair
 
     private static readonly Func<InventoryGui, ItemDrop.ItemData, bool> CanRepair =
         AccessTools.MethodDelegate<Func<InventoryGui, ItemDrop.ItemData, bool>>(AccessTools.Method(typeof(InventoryGui), "CanRepair"));
-    private static readonly Action<InventoryGui, bool> UpdateCraftingPanel =
-        AccessTools.MethodDelegate<Action<InventoryGui, bool>>(AccessTools.Method(typeof(InventoryGui), "UpdateCraftingPanel"));
     private static readonly AccessTools.FieldRef<Player, CraftingStation> CurrentStation =
         AccessTools.FieldRefAccess<Player, CraftingStation>("m_currentStation");
     // Every loaded station built in the world; the game only adds and removes, never replaces the list.
@@ -45,31 +43,41 @@ internal static class AutoRepair
             "AutoRepairNearbyMeters",
             15f,
             Plugin.Synced(
-                "Crafting stations within this many meters of you also repair what they can when you open one, each " +
-                "with its vanilla rules (item, station level, roof, fire). 0 repairs only at the station you open.",
+                "Crafting stations within this many meters of you also repair what they can when you open one (and when " +
+                "you quick stack, with QuickStackRepair), each with its vanilla rules (item, station level, roof, fire). " +
+                "0 repairs only at the station you open.",
                 new AcceptableValueRange<float>(0f, 50f)));
     }
 
     private static void Postfix(InventoryGui __instance)
     {
-        if (!_enabled.Value || !__instance.m_repairButton.gameObject.activeSelf) return;
+        if (!_enabled.Value || !__instance.m_repairButton.gameObject.activeSelf || Time.time < _idleUntil) return;
+        if (RepairAll(__instance, atOpenStation: true, MessageHud.MessageType.Center) == 0)
+            _idleUntil = Time.time + 0.5f;
+    }
 
+    // Repairs every worn item that the repair stations within AutoRepairNearbyMeters can repair and returns how many.
+    // atOpenStation puts the player's open station first, as its repair button does; QuickStackRepair has none open.
+    internal static int RepairAll(InventoryGui gui, bool atOpenStation, MessageHud.MessageType messageType)
+    {
+        // The local player only: CanRepair reads Player.m_localPlayer.
         Player player = Player.m_localPlayer;
+        if (player == null) return 0;
         Worn.Clear();
         player.GetInventory().GetWornItems(Worn);
         Worn.RemoveAll(item => !item.m_shared.m_canBeReparied);
-        if (Worn.Count == 0 || Time.time < _idleUntil) return;
+        if (Worn.Count == 0) return 0;
 
-        // The open station first, as the repair button; it is null only with the devcommands no-cost cheat.
+        // The open station is null only with the devcommands no-cost cheat.
         CraftingStation current = player.GetCurrentCraftingStation();
         Stations.Clear();
-        Stations.Add(current);
+        if (atOpenStation) Stations.Add(current);
         float range = _nearbyMeters.Value;
         foreach (CraftingStation station in AllStations)
         {
             // A valid ZNetView rules out the hammer's placement ghost and stations whose zone is unloading.
             ZNetView view = StationView(station);
-            if (station != current && station.m_canRepair && view != null && view.IsValid() &&
+            if (!Stations.Contains(station) && station.m_canRepair && view != null && view.IsValid() &&
                 Vector3.Distance(station.transform.position, player.transform.position) < range)
                 Stations.Add(station);
         }
@@ -84,7 +92,7 @@ internal static class AutoRepair
             try
             {
                 foreach (ItemDrop.ItemData item in Worn)
-                    if (CanRepair(__instance, item)) Repairable.Add(item);
+                    if (CanRepair(gui, item)) Repairable.Add(item);
             }
             finally
             {
@@ -102,15 +110,12 @@ internal static class AutoRepair
             }
             if (station != null) station.m_repairItemDoneEffects.Create(station.transform.position, Quaternion.identity);
         }
-        if (repaired == 0)
-        {
-            _idleUntil = Time.time + 0.5f;
-            return;
-        }
+        if (repaired == 0) return 0;
 
-        player.Message(MessageHud.MessageType.Center, repaired == 1
+        player.Message(messageType, repaired == 1
             ? Localization.instance.Localize("$msg_repaired", firstName)
             : $"{repaired} items repaired");
-        UpdateCraftingPanel(__instance, false);
+        QuickStack.RefreshCrafting();
+        return repaired;
     }
 }
