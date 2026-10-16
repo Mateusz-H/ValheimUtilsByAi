@@ -172,6 +172,22 @@ internal static class AutoStorage
         view.GetZDO().SetOwner(sender);
     }
 
+    // A chest broken or taken down with the hammer is unlinked from every piece around it, so its lines go too.
+    // WearNTear.Destroy runs only on the chest's owner, and not when the chest merely unloads. Not gated on the config:
+    // it only drops links to a chest that is gone.
+    [HarmonyPatch(typeof(Container), "OnDestroyed")]
+    private static class UnlinkDestroyedChest
+    {
+        private static void Postfix(Container __instance)
+        {
+            var view = ContainerView(__instance);
+            if (view == null || !view.IsValid() || !view.IsOwner() || !Chests.Contains(__instance)) return;
+            var position = __instance.transform.position;
+            UnlinkChest(position, Direction.Input);
+            UnlinkChest(position, Direction.Output);
+        }
+    }
+
     // A chest reloads its contents from the ZDO only once a second (Container.CheckForChanges) and never while open, so
     // a player opening a chest that a linked piece filled in the last second saw it without those items, and their
     // first move saved that view over them. Reloading right before it counts as open closes the gap. Only on the owner,
@@ -421,6 +437,10 @@ internal static class AutoStorage
     private static readonly Func<Smelter, string, Smelter.ItemConversion?> SmelterConversion =
         AccessTools.MethodDelegate<Func<Smelter, string, Smelter.ItemConversion?>>(AccessTools.Method(typeof(Smelter), "GetItemConversion"));
 
+    // Smelters and cooking stations take at most one fuel and one input per tick (once a second) instead of filling up
+    // at once, so pieces sharing an input chest take turns: 20 coal for two smelters ends up 10 and 10, not 20 in
+    // whichever ticked first. That is still far faster than any piece uses them. Input chests are only asked for while
+    // the piece has room, so a full piece doesn't keep pulling a shared chest away from another player's piece.
     [HarmonyPatch(typeof(Smelter), "UpdateSmelter")]
     private static class FeedSmelter
     {
@@ -434,22 +454,17 @@ internal static class AutoStorage
                 CollectStrays(nview, outputs, __instance.m_conversion.Select(conversion => conversion.m_to));
             }
 
+            if (!nview.IsValid()) return;
+            var zdo = nview.GetZDO();
+            var fuel = zdo.GetFloat(ZDOVars.s_fuel);
+            var wantsFuel = __instance.m_maxFuel > 0 && __instance.m_fuelItem != null && fuel <= __instance.m_maxFuel - 1;
+            var wantsOre = zdo.GetInt(ZDOVars.s_queued) < __instance.m_maxOre;
+            if (!wantsFuel && !wantsOre) return;
             var inputs = LinkedInventories(nview, Direction.Input);
             if (inputs.Count == 0) return;
-            var zdo = nview.GetZDO();
-            if (__instance.m_maxFuel > 0 && __instance.m_fuelItem != null)
-            {
-                var fuel = zdo.GetFloat(ZDOVars.s_fuel);
-                while (fuel <= __instance.m_maxFuel - 1 && TakeOne(inputs, __instance.m_fuelItem)) fuel += 1f;
-                zdo.Set(ZDOVars.s_fuel, fuel);
-            }
-
-            while (zdo.GetInt(ZDOVars.s_queued) < __instance.m_maxOre)
-            {
-                var ore = TakeCookable(inputs, __instance, SmelterFindCookable);
-                if (ore == null) return;
-                SmelterQueueOre(__instance, ore.m_dropPrefab.name, ore.m_cheated);
-            }
+            if (wantsFuel && TakeOne(inputs, __instance.m_fuelItem!)) zdo.Set(ZDOVars.s_fuel, fuel + 1f);
+            var ore = wantsOre ? TakeCookable(inputs, __instance, SmelterFindCookable) : null;
+            if (ore != null) SmelterQueueOre(__instance, ore.m_dropPrefab.name, ore.m_cheated);
         }
     }
 
@@ -551,25 +566,20 @@ internal static class AutoStorage
                 }
             }
 
-            var inputs = LinkedInventories(nview, Direction.Input);
-            if (inputs.Count == 0) return;
-            if (__instance.m_useFuel && __instance.m_fuelItem != null)
-            {
-                var fuel = zdo.GetFloat(ZDOVars.s_fuel);
-                while (fuel <= __instance.m_maxFuel - 1 && TakeOne(inputs, __instance.m_fuelItem)) fuel += 1f;
-                zdo.Set(ZDOVars.s_fuel, fuel);
-            }
-
-            if (__instance.m_requireFire && !CookingIsFireLit(__instance)) return;
+            if (!nview.IsValid()) return;
+            var fuel = zdo.GetFloat(ZDOVars.s_fuel);
+            var wantsFuel = __instance.m_useFuel && __instance.m_fuelItem != null && fuel <= __instance.m_maxFuel - 1;
             // Linked output chests that are all open, unloaded or still being handed over can't take the cooked food,
             // which would burn on the station.
-            if (outputs.Count == 0 && ReadChestPositions(zdo, Direction.Output) is { Count: > 0 }) return;
-            while (CookingFreeSlot(__instance) >= 0)
-            {
-                var raw = TakeCookable(inputs, __instance, CookingFindCookable);
-                if (raw == null) return;
-                nview.InvokeRPC("RPC_AddItem", raw.m_dropPrefab.name, raw.m_cheated);
-            }
+            var wantsFood = CookingFreeSlot(__instance) >= 0
+                && (!__instance.m_requireFire || CookingIsFireLit(__instance))
+                && !(outputs.Count == 0 && ReadChestPositions(zdo, Direction.Output) is { Count: > 0 });
+            if (!wantsFuel && !wantsFood) return;
+            var inputs = LinkedInventories(nview, Direction.Input);
+            if (inputs.Count == 0) return;
+            if (wantsFuel && TakeOne(inputs, __instance.m_fuelItem!)) zdo.Set(ZDOVars.s_fuel, fuel + 1f);
+            var raw = wantsFood ? TakeCookable(inputs, __instance, CookingFindCookable) : null;
+            if (raw != null) nview.InvokeRPC("RPC_AddItem", raw.m_dropPrefab.name, raw.m_cheated);
         }
     }
 
@@ -737,6 +747,14 @@ internal static class AutoStorage
 
     private static void UnlinkFromEveryPiece(Player player, Vector3 chestPosition, Direction direction)
     {
+        var unlinked = UnlinkChest(chestPosition, direction);
+        player.Message(MessageHud.MessageType.Center,
+            unlinked == 0 ? $"No piece uses this chest as {Kind(direction)}" : $"Unlinked {unlinked} piece(s) from this {Kind(direction)} chest");
+    }
+
+    // Returns how many pieces had the chest linked in this direction.
+    private static int UnlinkChest(Vector3 chestPosition, Direction direction)
+    {
         var unlinked = 0;
         var pieces = new List<Piece>();
         Piece.GetAllPiecesInRadius(chestPosition, _maxLinkDistance.Value, pieces);
@@ -749,8 +767,7 @@ internal static class AutoStorage
             SendLinkEdit(view, direction, false, chestPosition);
             unlinked++;
         }
-        player.Message(MessageHud.MessageType.Center,
-            unlinked == 0 ? $"No piece uses this chest as {Kind(direction)}" : $"Unlinked {unlinked} piece(s) from this {Kind(direction)} chest");
+        return unlinked;
     }
 
     private static readonly AccessTools.FieldRef<Player, GameObject?> PlacementGhost =
@@ -919,6 +936,9 @@ internal static class AutoStorage
             if (chests == null) continue;
             foreach (var chest in chests)
             {
+                // A chest broken before links were dropped on destroy, or while no peer with the mod owned it, leaves
+                // its link behind. Its line goes once the area is loaded with no chest there; the link is skipped on use.
+                if (FindChestAt(chest) == null && ZNetScene.instance.IsAreaReady(chest)) continue;
                 LinkSegments.Add(view.transform.position + Vector3.up * 0.5f);
                 LinkSegments.Add(chest + Vector3.up * 0.5f);
             }
