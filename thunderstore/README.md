@@ -48,9 +48,12 @@ bar icons): tools like the Hammer's Repair entry. Free, nothing is placed.
 Pick one in the Hammer menu, left-click a processing piece, then left-click any chest built by a player (wood chest,
 reinforced chest, black metal chest, ...; not carts, ships or tombstones). With **Link input** the piece takes its
 inputs from that chest; with **Link output** it puts its products into it. A piece can have several input and output
-chests, used in the order you linked them, and one chest can be both its input and its output. There is no pickup
+chests, used in the order you linked them, and one chest can be both its input and its output. Several pieces can
+share an input chest: each takes one item and one unit of fuel per second, so they split what is there (20 coal for
+two smelters gives each 10) and still fill up within seconds when the chest is full. There is no pickup
 radius or area: you choose every connection. Click the same piece and chest again to unlink; click a chest with
-nothing selected to unlink it from every piece that uses it as input (or as output, with Link output). While a link
+nothing selected to unlink it from every piece that uses it as input (or as output, with Link output). A chest that is
+destroyed or taken down with the hammer is unlinked from every piece, and its lines disappear. While a link
 tool is selected, lines show the existing links of its kind (blue for inputs, green for outputs) and a yellow line
 follows the selected piece. Pick any other Hammer entry to build again.
 

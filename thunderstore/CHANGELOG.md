@@ -1,5 +1,8 @@
 ## Unreleased
 
+- AutoStorage: a destroyed or dismantled chest is unlinked from every piece, and lines to chests that are already gone are no longer drawn (`[Crafting] AutoStorage`).
+- AutoStorage: pieces sharing an input chest split its contents: each takes one item and one fuel per second, so 20 coal for two smelters gives each 10 instead of the first one taking all (`[Crafting] AutoStorage`).
+
 ## 0.0.23
 
 - Auto shield with one-handed weapons: equipping a one-handed weapon with an empty left hand also equips a shield from the hotbar, and unequipping the weapon puts the shield away too (`[Combat] AutoShield`).
