@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.24
+
 - AutoStorage: a destroyed or dismantled chest is unlinked from every piece, and lines to chests that are already gone are no longer drawn (`[Crafting] AutoStorage`).
 - AutoStorage: pieces sharing an input chest split its contents: each takes one item and one fuel per second, so 20 coal for two smelters gives each 10 instead of the first one taking all (`[Crafting] AutoStorage`).
 
