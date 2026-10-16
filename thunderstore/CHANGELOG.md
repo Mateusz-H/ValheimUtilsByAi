@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Auto shield with one-handed weapons: equipping a one-handed weapon with an empty left hand also equips a shield from the hotbar, and unequipping the weapon puts the shield away too (`[Combat] AutoShield`).
+
 ## 0.0.22
 
 - Build at traders and spawn: place portals and other pieces and use the hoe and pickaxe next to Haldor, Hildir, the Bog Witch and the spawn stones; the traders' safe zone still keeps monsters out (`[Building] BuildInNoBuildZones`).
