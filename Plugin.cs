@@ -60,6 +60,7 @@ public sealed class Plugin : BaseUnityPlugin
         NetworkBandwidth.Bind(Config);
         QuickStackRepair.Bind(Config);
         BuildInNoBuildZones.Bind(Config);
+        AutoShield.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }

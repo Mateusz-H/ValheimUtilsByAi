@@ -541,6 +541,19 @@ Side: Client. Only the player who builds needs the mod, and what they build work
 mod can't remove those pieces with the hammer, as vanilla still blocks it for them. The server doesn't need the mod;
 works on vanilla servers.
 
+### Auto shield with one-handed weapons (`[Combat] AutoShield`, default: on)
+
+Equipping a one-handed weapon (sword, axe, mace, knife, spear, ...) from the hotbar or the inventory while nothing is
+in your left hand also takes up a shield from your hotbar: the shield you used last, or else the leftmost shield on
+the hotbar. Unequipping that weapon the same way puts the shield away too. Vanilla left the shield on the hotbar and
+kept it in hand after the weapon was put away.
+
+A torch or anything else already in your left hand stays there, switching to another one-handed weapon keeps the
+shield, and shields in your bag or with no durability left are never taken. Two-handed weapons, bows, tools, hiding
+your weapons with R and swimming work as in vanilla.
+
+Side: Client. Other players and the server don't need the mod.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
