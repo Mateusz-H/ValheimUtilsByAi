@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.23
+
 - Auto shield with one-handed weapons: equipping a one-handed weapon with an empty left hand also equips a shield from the hotbar, and unequipping the weapon puts the shield away too (`[Combat] AutoShield`).
 
 ## 0.0.22
