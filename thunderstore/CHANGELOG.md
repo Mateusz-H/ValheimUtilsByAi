@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Discover recipes from chests: opening a chest, cart, ship or tombstone learns the items inside, unlocking their recipes and build pieces without taking anything out (`[Crafting] DiscoverFromChests`).
+
 ## 0.0.24
 
 - AutoStorage: a destroyed or dismantled chest is unlinked from every piece, and lines to chests that are already gone are no longer drawn (`[Crafting] AutoStorage`).

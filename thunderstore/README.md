@@ -557,6 +557,18 @@ your weapons with R and swimming work as in vanilla.
 
 Side: Client. Other players and the server don't need the mod.
 
+### Discover recipes from chests (`[Crafting] DiscoverFromChests`, default: on)
+
+Vanilla only learns an item when it enters your inventory, and only then unlocks the recipes and build pieces that need
+it. With this on, opening a chest, cart, ship or tombstone learns every item inside as if you had picked it up: a
+friend's chest full of iron unlocks the iron recipes for you without taking any out.
+
+The items stay in the chest. Everything else is as when picking an item up: the same "new item" and "new recipe"
+messages, a trophy you see joins your trophy list, and on worlds with player-based raids the items you know decide
+which raids can come for you. Learned items stay learned after turning the feature off.
+
+Side: Client. Only the player opening the chest needs the mod; other players and the server don't.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires

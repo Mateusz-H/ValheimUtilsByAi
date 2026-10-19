@@ -61,6 +61,7 @@ public sealed class Plugin : BaseUnityPlugin
         QuickStackRepair.Bind(Config);
         BuildInNoBuildZones.Bind(Config);
         AutoShield.Bind(Config);
+        DiscoverFromChests.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }
