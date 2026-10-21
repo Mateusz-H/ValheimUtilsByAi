@@ -27,6 +27,9 @@ namespace ValheimUtilsByAi.Features;
 // craft. Whatever is left when the craft ends or is cancelled goes back to its chest, else the inventory, else the
 // ground.
 //
+// Every chest keeps the last unit of each liked stack and, with KeepOne, of each kind of item it holds, so quick stack
+// keeps finding it.
+//
 // Recipes that need only one of their ingredients are left vanilla: their consume path bypasses ConsumeResources.
 internal static class CraftFromContainers
 {
@@ -35,6 +38,7 @@ internal static class CraftFromContainers
 
     private static ConfigEntry<bool> _enabled = null!;
     private static ConfigEntry<float> _radius = null!;
+    private static ConfigEntry<bool> _keepOne = null!;
 
     public static void Bind(ConfigFile config)
     {
@@ -52,8 +56,16 @@ internal static class CraftFromContainers
             "CraftFromContainersRadius",
             15f,
             Plugin.Synced(
-                "How far from you, in meters, a chest can be to be used.",
-                new AcceptableValueRange<float>(1f, 50f)));
+                "How far from you, in meters, a chest can be to be used. Chests the game hasn't loaded around you " +
+                "(beyond about 130 m at the default simulation distance) are not used.",
+                new AcceptableValueRange<float>(1f, 250f)));
+        _keepOne = config.Bind(
+            "Crafting",
+            "CraftFromContainersKeepOne",
+            true,
+            Plugin.Synced(
+                "Crafting and building leave at least one of each item in every chest, so quick stack keeps sending " +
+                "that item there. That last one is not counted. When off, only a liked stack keeps its last item."));
     }
 
     private static readonly AccessTools.FieldRef<Container, ZNetView> ContainerView =
@@ -187,7 +199,8 @@ internal static class CraftFromContainers
     {
         foreach (var requirement in requirements)
         {
-            if (requirement.m_resItem && LikedItems.CountAvailable(inventory, requirement.m_resItem.m_itemData.m_shared.m_name) > 0) return true;
+            if (requirement.m_resItem && LikedItems.CountAvailable(inventory, requirement.m_resItem.m_itemData.m_shared.m_name,
+                    keepOne: _keepOne.Value) > 0) return true;
         }
         return false;
     }
@@ -214,7 +227,8 @@ internal static class CraftFromContainers
             var countNotOwned = _uiDepth > 0;
             foreach (var chest in ChestsInRange())
             {
-                if (Countable(chest, countNotOwned)) __result += LikedItems.CountAvailable(LoadedInventory(chest), name, quality, matchWorldLevel);
+                if (Countable(chest, countNotOwned))
+                    __result += LikedItems.CountAvailable(LoadedInventory(chest), name, quality, matchWorldLevel, _keepOne.Value);
             }
         }
     }
@@ -537,8 +551,9 @@ internal static class CraftFromContainers
                 {
                     if (missing <= 0) break;
                     if (!Matches(item, name, -1, matchWorldLevel: true)) continue;
-                    // A liked stack keeps its last unit, which marks the chest for quick stacking.
-                    var take = Mathf.Min(missing, item.m_stack - LikedItems.Reserved(item));
+                    // A liked stack keeps its last unit, which marks the chest for quick stacking, and so does the
+                    // first stack of each kind with KeepOne.
+                    var take = Mathf.Min(missing, item.m_stack - LikedItems.Reserved(inventory, item, _keepOne.Value));
                     if (take <= 0) continue;
                     var taken = item.Clone();
                     taken.m_stack = take;
@@ -660,9 +675,9 @@ internal static class CraftFromContainers
                     if (missing <= 0) break;
                     if (!IsOwned(chest)) continue;
                     var inventory = LoadedInventory(chest);
-                    var take = Mathf.Min(missing, LikedItems.CountAvailable(inventory, name, itemQuality));
+                    var take = Mathf.Min(missing, LikedItems.CountAvailable(inventory, name, itemQuality, keepOne: _keepOne.Value));
                     if (take <= 0) continue;
-                    LikedItems.RemoveAvailable(inventory, name, take, itemQuality);
+                    LikedItems.RemoveAvailable(inventory, name, take, itemQuality, _keepOne.Value);
                     missing -= take;
                 }
                 // The owned-only check before consuming counted these, so the check and this loop disagree (another

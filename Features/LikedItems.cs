@@ -61,24 +61,41 @@ internal static class LikedItems
     // Units of a chest stack nothing may take: the last one of a liked stack.
     internal static int Reserved(ItemDrop.ItemData item) => _enabled.Value && Flag(item) == InChest ? 1 : 0;
 
+    // keepOne also keeps one unit of every kind of item (QuickStack.SameStack) no liked stack keeps, on the first stack
+    // of that kind, so the chest keeps holding every kind it held. CraftFromContainersKeepOne.
+    internal static int Reserved(Inventory inventory, ItemDrop.ItemData item, bool keepOne)
+    {
+        var reserved = Reserved(item);
+        if (reserved > 0 || !keepOne) return reserved;
+        ItemDrop.ItemData? first = null;
+        foreach (var other in inventory.GetAllItems())
+        {
+            if (!QuickStack.SameStack(other, item)) continue;
+            if (Reserved(other) > 0) return 0;
+            first ??= other;
+        }
+        return first == item ? 1 : 0;
+    }
+
     internal static void Unlike(ItemDrop.ItemData item) => item.m_customData?.Remove(Key);
 
     // Inventory.CountItems without the reserved units.
-    internal static int CountAvailable(Inventory inventory, string name, int quality = -1, bool matchWorldLevel = true)
+    internal static int CountAvailable(Inventory inventory, string name, int quality = -1, bool matchWorldLevel = true,
+        bool keepOne = false)
     {
         var count = 0;
         foreach (var item in inventory.GetAllItems())
         {
             if (item.m_shared.m_name != name || (quality >= 0 && item.m_quality != quality)) continue;
             if (matchWorldLevel && item.m_worldLevel < Game.m_worldLevel) continue;
-            count += Mathf.Max(0, item.m_stack - Reserved(item));
+            count += Mathf.Max(0, item.m_stack - Reserved(inventory, item, keepOne));
         }
         return count;
     }
 
     // Inventory.RemoveItem(name, amount, quality), in the same list order, leaving the reserved units. Returns how many
     // it removed.
-    internal static int RemoveAvailable(Inventory inventory, string name, int amount, int quality = -1)
+    internal static int RemoveAvailable(Inventory inventory, string name, int amount, int quality = -1, bool keepOne = false)
     {
         var removed = 0;
         var items = inventory.GetAllItems();
@@ -87,7 +104,7 @@ internal static class LikedItems
             var item = items[i];
             if (item.m_shared.m_name != name || (quality >= 0 && item.m_quality != quality)) continue;
             if (item.m_worldLevel < Game.m_worldLevel) continue;
-            var take = Mathf.Min(amount - removed, item.m_stack - Reserved(item));
+            var take = Mathf.Min(amount - removed, item.m_stack - Reserved(inventory, item, keepOne));
             if (take <= 0) continue;
             inventory.RemoveItem(item, take);
             removed += take;
