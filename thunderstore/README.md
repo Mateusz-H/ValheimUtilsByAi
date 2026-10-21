@@ -216,10 +216,12 @@ it keeps the vanilla delay.
 ### Craft and build from nearby containers (`[Crafting] CraftFromContainers`, default: on)
 
 Crafting, upgrading and building count materials in chests built by any player within `[Crafting] CraftFromContainersRadius`
-(default 15 m) of you. Your own inventory is used first, then the chests. The requirement numbers in the crafting
+(default 15 m, 1-250 m) of you; chests the game hasn't loaded around you (beyond about 130 m at the default
+simulation distance) are not used. Your own inventory is used first, then the chests. The requirement numbers in the crafting
 panel and build menu show what you have (inventory plus chests) and what is needed, for example `25/10`, and stop
-flashing red when the chests have enough. A liked stack in a chest (see Liked items) always keeps its last item, which
-is not counted.
+flashing red when the chests have enough. Every chest keeps at least one of each item it holds, so quick stack keeps
+sending that item there; that last one is not counted (`[Crafting] CraftFromContainersKeepOne`, default on). With it
+off, only a liked stack in a chest (see Liked items) keeps its last item.
 
 What stays vanilla: carts, ships, tombstones, feeding troughs, other players' private chests and chests behind a ward
 you can't use are ignored. The item you upgrade must still be in your inventory. Recipes that take only one of
