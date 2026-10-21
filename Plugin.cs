@@ -63,6 +63,8 @@ public sealed class Plugin : BaseUnityPlugin
         AutoShield.Bind(Config);
         PlantAnyBiome.Bind(Config);
         WindmillFullSpeed.Bind(Config);
+        QuietTamedAnimals.Bind(Config);
+        QuietWindmills.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }
