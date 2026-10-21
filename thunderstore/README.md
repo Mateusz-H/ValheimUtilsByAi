@@ -600,6 +600,24 @@ the spawn stones) the dedicated server. While a game without the mod controls it
 players without the mod see its blades turn with the wind. The server needs the mod only for windmills near the spawn;
 elsewhere a vanilla server is fine.
 
+### Quiet tamed animals (`[World] QuietTamedAnimals`, default: on)
+
+Tamed animals' calls play at `[World] QuietTamedAnimalsVolume` percent of their vanilla volume (default 0, muted):
+the lox moo, the wolf howl, the grunts and clucks of boars, hens and asksvin, and the other sounds of their idle and
+walking animations, such as hens pecking and asksvin footsteps. Everything else stays vanilla: attacks, getting hurt
+and dying, eating, breeding, the alert roar when an enemy shows up, petting and taming, summoned trolls and
+skeletons, and every wild animal.
+
+Side: Client. Each player's game quiets the calls it plays, and the server doesn't need the mod. Nearby players'
+games also send their copy of each call to you; a copy from a player without the mod plays at full volume.
+
+### Quiet windmills (`[Crafting] QuietWindmills`, default: on)
+
+The grinding and turning blades of windmills play at `[Crafting] QuietWindmillsVolume` percent of their vanilla volume
+(default 0, muted). The sounds of adding barley and dropping flour stay vanilla.
+
+Side: Client. Other players and the server don't need the mod.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
