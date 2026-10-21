@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.25
+
 - Plant in any biome: saplings and seeds grow in any biome, crops also in the Mountains, Deep North and Ashlands without a shield, instead of withering and disappearing; PlantEasily grids plant them too (`[World] PlantAnyBiome`).
 - Windmill at full speed: windmills always grind one flour every 10 seconds, whatever the wind and whatever covers the blades (`[Crafting] WindmillFullSpeed`).
 - Craft from containers: `[Crafting] CraftFromContainersRadius` goes up to 250 m instead of 50 m.
