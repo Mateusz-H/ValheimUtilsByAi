@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.26
+
 - Quiet tamed animals: the lox moo, wolf howl and the grunts and clucks of tamed boars, hens and asksvin are muted, or set to a volume in `[World] QuietTamedAnimalsVolume` (`[World] QuietTamedAnimals`).
 - Quiet windmills: the grinding and turning blades of windmills are muted, or set to a volume in `[Crafting] QuietWindmillsVolume` (`[Crafting] QuietWindmills`).
 
