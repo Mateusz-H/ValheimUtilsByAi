@@ -557,6 +557,47 @@ your weapons with R and swimming work as in vanilla.
 
 Side: Client. Other players and the server don't need the mod.
 
+### Plant in any biome (`[World] PlantAnyBiome`, default: on)
+
+Saplings and seeds grow wherever you plant them. Vanilla lets you plant a sapling in any biome, but outside its own
+biomes it shows "( Wrong biome )" and, when its grow time is up, disappears instead of growing (a vine just never
+grows). Barley and flax grow only in the Plains, Jotun puffs and magecap only in the Mistlands, the other crops and the
+beech, birch, oak and pine saplings in the Meadows, Black Forest and Plains (turnips also in the Swamp and Mistlands, fir
+saplings also in the Mountains). On top of that, crops are "( Too hot )" in the Ashlands and "( Too cold )" in the
+Mountains and Deep North unless a shield generator covers them. With this on none of that applies: the sapling stays
+"( Healthy )" and grows into the normal crop or tree. PlantEasily refuses to plant those (red ghost, same message);
+with this on its grid plants them too.
+
+Everything else stays vanilla: crops still need cultivated ground, every sapling needs open sky above it and free space
+around it, vines still need a wall to climb, and grow times are unchanged. Turning it off brings the vanilla checks
+back, also for saplings already in the ground: those outside their biome wither again and disappear when their time
+is up.
+
+Side: Client. A sapling outside its biome grows only while the game that controls it has the mod: always in single
+player; in multiplayer usually the first player who came near it, but within about 100 m of the world centre (around
+the spawn stones) the dedicated server. Controlled by a game without the mod, it withers and disappears when its time
+is up, as in vanilla, and a player without the mod who swings a scythe over it removes it like any withered sapling.
+So every player should have the mod, and the server too for saplings near the spawn; elsewhere a vanilla server is
+fine.
+
+### Windmill at full speed (`[Crafting] WindmillFullSpeed`, default: on)
+
+Windmills grind barley into flour at full speed whatever the weather: one flour every 10 seconds, which vanilla reaches
+only in the strongest wind. Vanilla slows them as the wind drops (about 22 seconds per flour at half wind), stops them
+below a tenth of full wind, and slows them further when walls, a roof or trees around the blades block the wind. With
+this on neither wind nor cover matters, also when a windmill catches up on the time you were away. The blades always
+spin at full speed, and MyLittleUI's time left on hover follows. Spinning that fast, the blades always hit whoever walks
+into them (20 blunt), which vanilla does only from about a third of full wind.
+
+Everything else stays vanilla: it holds up to 50 barley, the flour comes out as before, and the blades still turn to
+face the wind.
+
+Side: Client. A windmill grinds at full speed only while the game that controls it has the mod: always in single
+player; in multiplayer usually the first player who came near it, but within about 100 m of the world centre (around
+the spawn stones) the dedicated server. While a game without the mod controls it, it grinds at vanilla speed, and
+players without the mod see its blades turn with the wind. The server needs the mod only for windmills near the spawn;
+elsewhere a vanilla server is fine.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
