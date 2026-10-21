@@ -1,5 +1,6 @@
 using BepInEx.Configuration;
 using HarmonyLib;
+using UnityEngine;
 
 namespace ValheimUtilsByAi.Features;
 
@@ -7,8 +8,9 @@ namespace ValheimUtilsByAi.Features;
 // (sfx_lox_shout) and wolf howl (sfx_wolf_haul) by AnimationEffect.Effect from animation events, the grunts and clucks
 // of boars, hens and asksvin by BaseAI.DoIdleSound. Most of them carry a ZNetView, so each client's copy is also sent to
 // the other players and built there by ZNetScene.CreateObject. A ZSFX starts playing in its first update, after
-// Instantiate returns, so its volume modifier is set in ZSFX.Awake while such a call is being spawned; the networked
-// copy gets a ZDO flag, whatever the sender's setting, so each receiving player's own setting decides.
+// Instantiate returns, so its volume modifier is set in ZSFX.Awake while such a call is being spawned. The networked
+// copy gets a ZDO flag, whatever the sender's setting, and the receiving player's game quiets it right after building
+// it, so the receiver's own setting decides.
 internal static class QuietTamedAnimals
 {
     private static readonly int CallKey = "mh_QuietTamedAnimalsCall".GetStableHashCode();
@@ -62,9 +64,12 @@ internal static class QuietTamedAnimals
     [HarmonyPatch(typeof(ZNetScene), "CreateObject")]
     private static class RemoteCopy
     {
-        private static void Prefix(ZDO zdo) => _inCall = zdo.GetBool(CallKey);
-
-        private static void Finalizer() => _inCall = false;
+        private static void Postfix(ZDO zdo, GameObject? __result)
+        {
+            if (__result == null || !_enabled.Value || !zdo.GetBool(CallKey)) return;
+            foreach (ZSFX sfx in __result.GetComponentsInChildren<ZSFX>())
+                sfx.SetVolumeModifier(_volume.Value / 100f);
+        }
     }
 
     [HarmonyPatch(typeof(ZNetView), "Awake")]
