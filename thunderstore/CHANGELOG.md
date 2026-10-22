@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Quiet tamed animals: tamed young animals are quieted too, so bred wolf cubs no longer howl at full volume, and lox calves, piglets, chicks and asksvin hatchlings are quiet as well (`[World] QuietTamedAnimals`).
+
 ## 0.0.26
 
 - Quiet tamed animals: the lox moo, wolf howl and the grunts and clucks of tamed boars, hens and asksvin are muted, or set to a volume in `[World] QuietTamedAnimalsVolume` (`[World] QuietTamedAnimals`).

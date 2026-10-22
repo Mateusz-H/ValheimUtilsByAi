@@ -604,7 +604,8 @@ elsewhere a vanilla server is fine.
 
 Tamed animals' calls play at `[World] QuietTamedAnimalsVolume` percent of their vanilla volume (default 0, muted):
 the lox moo, the wolf howl, the grunts and clucks of boars, hens and asksvin, and the other sounds of their idle and
-walking animations, such as hens pecking and asksvin footsteps. Everything else stays vanilla: attacks, getting hurt
+walking animations, such as hens pecking and asksvin footsteps. Their young count too: wolf cubs, lox calves, piglets,
+chicks and asksvin hatchlings. Everything else stays vanilla: attacks, getting hurt
 and dying, eating, breeding, the alert roar when an enemy shows up, petting and taming, summoned trolls and
 skeletons, and every wild animal.
 
