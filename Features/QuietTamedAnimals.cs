@@ -37,11 +37,13 @@ internal static class QuietTamedAnimals
                 new AcceptableValueRange<int>(0, 100)));
     }
 
-    // Summons (Staff of the Wild troll, Dead Raiser skeletons) start tamed and keep their sounds. Attack sounds of
-    // asksvin and moose also come from animation events; they stay vanilla.
+    // Summons (Staff of the Wild troll, Dead Raiser skeletons) start tamed and keep their sounds. Young animals (wolf cub,
+    // lox calf, piglet, chick, asksvin hatchling) have no Tameable: Procreation, EggGrow and Growup tame them with
+    // Character.SetTamed. A tamed wolf cub still picks the howl among its idle animations, a tamed adult wolf never does.
+    // Attack sounds of asksvin and moose also come from animation events; they stay vanilla.
     private static bool IsTamedCall(Character? character) =>
         character != null && !character.IsPlayer() && character.IsTamed() &&
-        character.GetComponent<Tameable>() is { m_startsTamed: false } && !character.InAttack();
+        character.GetComponent<Tameable>() is not { m_startsTamed: true } && !character.InAttack();
 
     [HarmonyPatch(typeof(BaseAI), "DoIdleSound")]
     private static class IdleSound
