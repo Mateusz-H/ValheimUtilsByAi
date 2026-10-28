@@ -11,7 +11,7 @@ internal static class BuildInNoBuildZones
 {
     private static readonly HashSet<string> BuildableLocations = new HashSet<string>
     {
-        "StartTemple", "Vendor_BlackForest", "Hildir_camp", "BogWitch_Camp",
+        "StartTemple", "Vendor_BlackForest", "Hildir_camp", "BogWitch_Camp", "AncientUpgradeStation",
     };
 
     private static ConfigEntry<bool> _enabled = null!;
@@ -24,8 +24,8 @@ internal static class BuildInNoBuildZones
             "BuildInNoBuildZones",
             true,
             Plugin.Synced(
-                "Build, remove your own pieces and use the hoe or pickaxe at the traders (Haldor, Hildir, Bog Witch) " +
-                "and at the spawn stones. Monsters still stay out of the traders' safe zone."));
+                "Build, remove your own pieces and use the hoe or pickaxe at the traders (Haldor, Hildir, Bog Witch), " +
+                "at the spawn stones and at the Forge of Potential. Monsters still stay out of the traders' safe zone."));
     }
 
     // Placing, hammer removal and terrain tools all ask this one method. Other no-build zones (the Fader arena,

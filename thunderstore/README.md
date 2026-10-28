@@ -532,9 +532,10 @@ Side: Client. Nobody else needs the mod.
 
 ### Build at traders and spawn (`[Building] BuildInNoBuildZones`, default: on)
 
-Vanilla forbids building, removing pieces and changing the ground around the traders (Haldor, Hildir, the Bog Witch)
-and at the spawn stones. With this on they work like anywhere else: put a portal next to a trader, set up a workbench,
-level the ground with the hoe or dig with the pickaxe. Most pieces still need a workbench nearby.
+Vanilla forbids building, removing pieces and changing the ground around the traders (Haldor, Hildir, the Bog Witch),
+at the spawn stones and at the Forge of Potential in the Mountains. With this on they work like anywhere else: put a
+portal next to a trader or the forge, set up a workbench, level the ground with the hoe or dig with the pickaxe. Most
+pieces still need a workbench nearby.
 
 Everything else stays vanilla: the traders' safe zone still keeps monsters out (it is separate from the no-build zone),
 the traders' own fire pits and the Bog Witch's candles can't be removed with the hammer, and the other no-build zones

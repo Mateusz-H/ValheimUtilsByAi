@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Build at traders and spawn: building, removing your own pieces and the hoe and pickaxe work at the Forge of Potential too (`[Building] BuildInNoBuildZones`).
+
 ## 0.0.27
 
 - Quiet tamed animals: tamed young animals are quieted too, so bred wolf cubs no longer howl at full volume, and lox calves, piglets, chicks and asksvin hatchlings are quiet as well (`[World] QuietTamedAnimals`).
