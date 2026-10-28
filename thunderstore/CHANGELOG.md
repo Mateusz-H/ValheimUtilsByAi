@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.30
+
 - Portal map travel: a portal pin scrolled out of view no longer throws an error every map update, which stopped the map from closing when you walked away from the portal (`[World] PortalMapTravel`).
 
 ## 0.0.29
