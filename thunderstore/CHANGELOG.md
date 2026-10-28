@@ -1,5 +1,7 @@
 ## Unreleased
 
+- AutoStorage: works with Valheim 1.0.21, where a cooking station linked to an output chest put the same cooked food into the chest again every second instead of emptying its slot (`[Crafting] AutoStorage`).
+
 ## 0.0.28
 
 - Sap capacity: sap extractors hold 50 sap, set in `[Crafting] SapCapacityAmount`; coming back, the extractor takes everything the root regrew while you were away at once, and the root no longer loses sap the extractor had no room for (`[Crafting] SapCapacity`).
