@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Portal map travel: a portal pin scrolled out of view no longer throws an error every map update, which stopped the map from closing when you walked away from the portal (`[World] PortalMapTravel`).
+
 ## 0.0.29
 
 - AutoStorage: works with Valheim 1.0.21, where a cooking station linked to an output chest put the same cooked food into the chest again every second instead of emptying its slot (`[Crafting] AutoStorage`).

@@ -247,7 +247,9 @@ internal static class PortalMapTravel
             foreach (var pin in Pins.Keys)
             {
                 if (pin.m_uiElement != null) pin.m_uiElement.SetAsLastSibling();
-                pin.m_NamePinData?.PinNameRectTransform?.SetAsLastSibling();
+                // A pin leaving the view destroys its name but keeps the stale transform: Unity's != sees it, ?. doesn't.
+                var name = pin.m_NamePinData?.PinNameRectTransform;
+                if (name != null) name.SetAsLastSibling();
             }
         }
     }
