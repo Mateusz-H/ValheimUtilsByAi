@@ -65,6 +65,7 @@ public sealed class Plugin : BaseUnityPlugin
         WindmillFullSpeed.Bind(Config);
         QuietTamedAnimals.Bind(Config);
         QuietWindmills.Bind(Config);
+        SapCapacity.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }

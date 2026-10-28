@@ -619,6 +619,26 @@ The grinding and turning blades of windmills play at `[Crafting] QuietWindmillsV
 
 Side: Client. Other players and the server don't need the mod.
 
+### Sap capacity (`[Crafting] SapCapacity`, default: on)
+
+Sap extractors hold up to `[Crafting] SapCapacityAmount` sap (default 50) instead of 10. The ancient root they sit on
+stays vanilla: it holds 50 and regrows about 9 sap an hour (one every 400 seconds), so it is full again after about
+5.5 hours; while you are near, the extractor draws one a minute. Several extractors on one root share its sap.
+
+Nothing grows while nobody is near; the game catches up when someone comes back. In vanilla the extractor usually
+catches up before the root, finds the root as drained as you left it, and the root's regrowth then comes out one a
+minute while you stay. With this on the root catches up first and the extractor takes all of it at once, so coming
+back after 5.5 hours or more finds 49 sap in the extractor (one stays in the root, as vanilla never drains a root
+completely), or in its output chest when it is linked with AutoStorage. The root also loses only what fit in the
+extractor: vanilla drains the whole catch-up from it even when the extractor had no room for it. Extracting by hand
+drops the sap as full stacks instead of one item per sap.
+
+Off: vanilla. An extractor keeps what it holds above 10 until it is emptied.
+
+Side: Client. An extractor and its root follow the game that controls them: always in single player; in multiplayer
+usually the first player who came near them. While a game without the mod controls them they work as in vanilla. The
+server doesn't need the mod.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires

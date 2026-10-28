@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Sap capacity: sap extractors hold 50 sap, set in `[Crafting] SapCapacityAmount`; coming back, the extractor takes everything the root regrew while you were away at once, and the root no longer loses sap the extractor had no room for (`[Crafting] SapCapacity`).
+- AutoStorage: a product that arrives as more than a full stack goes into the output chest as full stacks instead of one oversized stack (`[Crafting] AutoStorage`).
+
 ## 0.0.27
 
 - Quiet tamed animals: tamed young animals are quieted too, so bred wolf cubs no longer howl at full volume, and lox calves, piglets, chicks and asksvin hatchlings are quiet as well (`[World] QuietTamedAnimals`).
