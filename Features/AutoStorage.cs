@@ -353,7 +353,17 @@ internal static class AutoStorage
         item.m_worldLevel = (byte)Game.m_worldLevel;
         foreach (var inventory in outputs)
         {
-            if (inventory.CanAddItem(item)) return inventory.AddItem(item);
+            if (!inventory.CanAddItem(item)) continue;
+            // AddItem puts whatever doesn't top up existing stacks into one slot, even past the max stack size, so a
+            // large amount (sap after a long time away) goes in a full stack at a time. CanAddItem counted room for all.
+            var maxStack = Math.Max(1, item.m_shared.m_maxStackSize);
+            for (var left = amount; left > 0; left -= maxStack)
+            {
+                var stack = item.Clone();
+                stack.m_stack = Math.Min(left, maxStack);
+                inventory.AddItem(stack);
+            }
+            return true;
         }
         return false;
     }
