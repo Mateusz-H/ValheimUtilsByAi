@@ -571,7 +571,8 @@ internal static class AutoStorage
                     if (itemName == "" || !CookingIsItemDone(__instance, itemName)) continue;
                     var prefab = ObjectDB.instance.GetItemPrefab(itemName);
                     if (prefab == null || !Store(outputs, prefab, 1)) continue;
-                    CookingSetSlot.Invoke(__instance, new object[] { slot, "", 0f, Enum.ToObject(CookingStatus, 0), false });
+                    // Reflection fills no optional parameter: the sender SetSlot gained in 1.0.21 is passed as vanilla does.
+                    CookingSetSlot.Invoke(__instance, new object[] { slot, "", 0f, Enum.ToObject(CookingStatus, 0), false, 0L });
                     nview.InvokeRPC(ZNetView.Everybody, "RPC_SetSlotVisual", slot, "");
                 }
             }
