@@ -639,6 +639,12 @@ Side: Client. An extractor and its root follow the game that controls them: alwa
 usually the first player who came near them. While a game without the mod controls them they work as in vanilla. The
 server doesn't need the mod.
 
+### Stackable crystal walls (`[Building] StackableCrystalWalls`, default: on)
+
+Crystal walls (`crystal_wall_1x1`) can be placed on top of and against other crystal walls, so you can build a tall glass wall, and they hold up what rests on them like other walls do. In vanilla, aiming at a crystal wall shows invalid placement because it gives no support. Their own stability, damage and cost stay vanilla. Turning the setting off makes pieces resting only on crystal walls collapse.
+
+Side: Both. Every player needs the mod: placement is checked by the builder, and support is computed by whoever owns the area, so stacked walls owned by a player without the mod fall.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires

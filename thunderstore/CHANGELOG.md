@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Stackable crystal walls: crystal walls can be built on top of each other and support other pieces.
+
 ## 0.0.30
 
 - Portal map travel: a portal pin scrolled out of view no longer throws an error every map update, which stopped the map from closing when you walked away from the portal (`[World] PortalMapTravel`).

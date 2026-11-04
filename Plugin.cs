@@ -66,6 +66,7 @@ public sealed class Plugin : BaseUnityPlugin
         QuietTamedAnimals.Bind(Config);
         QuietWindmills.Bind(Config);
         SapCapacity.Bind(Config);
+        StackableCrystalWalls.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }
