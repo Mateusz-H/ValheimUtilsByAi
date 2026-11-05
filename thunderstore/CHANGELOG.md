@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Monsters don't damage crops: creatures can no longer destroy planted crops and saplings (`[World] ProtectCrops`).
+
 ## 0.0.31
 
 - Stackable crystal walls: crystal walls can be built on top of each other and support other pieces.
