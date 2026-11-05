@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.32
+
 - Monsters don't damage crops: creatures can no longer destroy planted crops and saplings (`[World] ProtectCrops`).
 
 ## 0.0.31
