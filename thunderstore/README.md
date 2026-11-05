@@ -645,6 +645,12 @@ Crystal walls (`crystal_wall_1x1`) can be placed on top of and against other cry
 
 Side: Both. Every player needs the mod: placement is checked by the builder, and support is computed by whoever owns the area, so stacked walls owned by a player without the mod fall.
 
+### Monsters don't damage crops (`[World] ProtectCrops`, default: on)
+
+Seekers, greylings, trolls and every other creature no longer damage planted crops, saplings or pickable plants, whether they hit them directly or catch them in an area attack. Players can still hit and remove plants, and a sapling that fails to grow (wrong biome, no space) still withers as in vanilla. Fire no longer burns them either, including fire a player starts. Fences, walls and other building pieces stay vanilla.
+
+Side: Both. Damage is applied by whoever owns the plant (usually the player nearby), so every player should run the mod; the server decides the setting.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
