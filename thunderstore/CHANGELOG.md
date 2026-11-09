@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.0.33
+
 - No lava rocks in the Ashlands: lava pools no longer throw burning rocks (`[World] NoLavaRocks`).
 
 ## 0.0.32
