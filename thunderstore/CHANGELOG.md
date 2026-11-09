@@ -1,5 +1,7 @@
 ## Unreleased
 
+- No lava rocks in the Ashlands: lava pools no longer throw burning rocks (`[World] NoLavaRocks`).
+
 ## 0.0.32
 
 - Monsters don't damage crops: creatures can no longer destroy planted crops and saplings (`[World] ProtectCrops`).

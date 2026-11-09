@@ -68,6 +68,7 @@ public sealed class Plugin : BaseUnityPlugin
         SapCapacity.Bind(Config);
         StackableCrystalWalls.Bind(Config);
         ProtectCrops.Bind(Config);
+        NoLavaRocks.Bind(Config);
         Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, MyPluginInfo.PLUGIN_GUID);
         Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
     }

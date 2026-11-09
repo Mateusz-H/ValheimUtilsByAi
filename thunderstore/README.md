@@ -651,6 +651,12 @@ Seekers, greylings, trolls and every other creature no longer damage planted cro
 
 Side: Both. Damage is applied by whoever owns the plant (usually the player nearby), so every player should run the mod; the server decides the setting.
 
+### No lava rocks in the Ashlands (`[World] NoLavaRocks`, default: on)
+
+Lava pools in the Ashlands no longer bubble up and throw burning rocks that hit players, creatures, trees and buildings within a few metres and can start fires. Lava heat and burning when you walk into lava, cinder rain during Ashlands storms, lava blobs and the lava bomb stay vanilla. Rocks already in the air when the setting is turned on still land.
+
+Side: Both. Lava rocks are spawned by whoever owns that area of the map (usually the player nearby), so every player should run the mod; the server decides the setting.
+
 ## Install
 
 Drop `ValheimUtilsByAi.dll` into `BepInEx/plugins` or install with a mod manager. Requires
